@@ -42,6 +42,7 @@ class VoiceAnnouncementEngine @Inject constructor(
         val locale = when (language) {
             VoiceLanguage.ENGLISH -> Locale.US
             VoiceLanguage.HINDI -> Locale("hi", "IN")
+            VoiceLanguage.MARATHI -> Locale("mr", "IN")
         }
         val availability = engine.isLanguageAvailable(locale)
         if (availability == TextToSpeech.LANG_MISSING_DATA ||

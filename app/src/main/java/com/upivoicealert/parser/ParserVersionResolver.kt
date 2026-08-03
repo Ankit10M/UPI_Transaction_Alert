@@ -8,7 +8,7 @@ import javax.inject.Inject
  * (CLAUDE.md Module 2, Component 3.)
  */
 class ParserVersionResolver @Inject constructor(
-    parsers: List<TransactionParser>
+    parsers: List<@JvmSuppressWildcards TransactionParser>
 ) {
 
     private val parsersByPackage: Map<String, List<TransactionParser>> =

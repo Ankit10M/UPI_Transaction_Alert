@@ -19,6 +19,8 @@ class AnnouncementTemplates @Inject constructor(
                 "Received $amountWords from ${transaction.sender} via ${transaction.upiApp}"
             VoiceLanguage.HINDI ->
                 "$amountWords प्राप्त हुए ${transaction.sender} से ${transaction.upiApp} के माध्यम से"
+            VoiceLanguage.MARATHI ->
+                "$amountWords मिळाले ${transaction.sender} कडून ${transaction.upiApp} द्वारे"
         }
     }
 }

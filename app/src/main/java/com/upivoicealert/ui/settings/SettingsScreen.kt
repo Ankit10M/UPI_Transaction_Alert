@@ -17,6 +17,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -44,6 +45,7 @@ fun SettingsScreen(
     val voiceEnabled by viewModel.voiceEnabled.collectAsStateWithLifecycle()
     val language by viewModel.language.collectAsStateWithLifecycle()
     val speechRate by viewModel.speechRate.collectAsStateWithLifecycle()
+    val mobileNumber by viewModel.mobileNumber.collectAsStateWithLifecycle()
     val ttsFallbackOccurred by viewModel.ttsFallbackOccurred.collectAsStateWithLifecycle()
     val listenerGranted by viewModel.listenerGranted.collectAsStateWithLifecycle()
     val batteryIgnored by viewModel.batteryIgnored.collectAsStateWithLifecycle()
@@ -100,6 +102,25 @@ fun SettingsScreen(
                 onValueChange = viewModel::setSpeechRate,
                 valueRange = 0.5f..2.0f,
                 steps = 14
+            )
+        }
+
+        SettingsCard {
+            Text(
+                text = stringResource(R.string.mobile_number_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = stringResource(R.string.mobile_number_desc),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            OutlinedTextField(
+                value = mobileNumber,
+                onValueChange = viewModel::setMobileNumber,
+                label = { Text(stringResource(R.string.mobile_number_hint)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
             )
         }
 
@@ -239,4 +260,5 @@ private fun StatusRow(
 private fun VoiceLanguage.displayName(): String = when (this) {
     VoiceLanguage.ENGLISH -> "English"
     VoiceLanguage.HINDI -> "Hindi"
+    VoiceLanguage.MARATHI -> "Marathi"
 }

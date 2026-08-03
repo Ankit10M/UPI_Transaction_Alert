@@ -22,6 +22,7 @@ import com.upivoicealert.ui.dashboard.DashboardScreen
 import com.upivoicealert.ui.debug.UnparsedNotificationsScreen
 import com.upivoicealert.ui.history.HistoryScreen
 import com.upivoicealert.ui.onboarding.ConsentScreen
+import com.upivoicealert.ui.onboarding.MobileNumberScreen
 import com.upivoicealert.ui.onboarding.PermissionSetupScreen
 import com.upivoicealert.ui.onboarding.PrivacyExplanationScreen
 import com.upivoicealert.ui.settings.SettingsScreen
@@ -33,6 +34,7 @@ object Routes {
     const val UNPARSED = "unparsed"
     const val CONSENT = "consent"
     const val PRIVACY = "privacy"
+    const val MOBILE_NUMBER = "mobileNumber"
     const val PERMISSION_SETUP = "permissionSetup"
 }
 
@@ -43,8 +45,6 @@ fun MainNavHost(debugMode: Boolean) {
     val currentRoute = backStackEntry?.destination?.route
     val bottomBarVisible = currentRoute in listOf(Routes.DASHBOARD, Routes.HISTORY, Routes.SETTINGS)
 
-    val startDestinationId = navController.graph.findStartDestination().id
-
     Scaffold(
         bottomBar = {
             if (bottomBarVisible) {
@@ -53,7 +53,7 @@ fun MainNavHost(debugMode: Boolean) {
                         selected = currentRoute == Routes.DASHBOARD,
                         onClick = {
                             navController.navigate(Routes.DASHBOARD) {
-                                popUpTo(startDestinationId) { saveState = true }
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                 launchSingleTop = true
                                 restoreState = true
                             }
@@ -65,7 +65,7 @@ fun MainNavHost(debugMode: Boolean) {
                         selected = currentRoute == Routes.HISTORY,
                         onClick = {
                             navController.navigate(Routes.HISTORY) {
-                                popUpTo(startDestinationId) { saveState = true }
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                 launchSingleTop = true
                                 restoreState = true
                             }
@@ -77,7 +77,7 @@ fun MainNavHost(debugMode: Boolean) {
                         selected = currentRoute == Routes.SETTINGS,
                         onClick = {
                             navController.navigate(Routes.SETTINGS) {
-                                popUpTo(startDestinationId) { saveState = true }
+                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                 launchSingleTop = true
                                 restoreState = true
                             }
@@ -117,7 +117,10 @@ fun OnboardingNavHost(onFinished: () -> Unit) {
             ConsentScreen(onContinue = { navController.navigate(Routes.PRIVACY) })
         }
         composable(Routes.PRIVACY) {
-            PrivacyExplanationScreen(onContinue = { navController.navigate(Routes.PERMISSION_SETUP) })
+            PrivacyExplanationScreen(onContinue = { navController.navigate(Routes.MOBILE_NUMBER) })
+        }
+        composable(Routes.MOBILE_NUMBER) {
+            MobileNumberScreen(onContinue = { navController.navigate(Routes.PERMISSION_SETUP) })
         }
         composable(Routes.PERMISSION_SETUP) {
             PermissionSetupScreen(onFinish = onFinished)

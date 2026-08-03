@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Configurable promotional keyword list for NotificationFilter (CLAUDE.md Module 2).
-     Extendable without code changes. -->
 <resources>
     <string-array name="notification_filter_keywords">
         <item>cashback</item>

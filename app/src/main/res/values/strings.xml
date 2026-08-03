@@ -19,6 +19,10 @@
     <string name="permission_battery_open">Request exemption</string>
     <string name="permission_finish">Finish</string>
 
+    <string name="mobile_number_title">Mobile Number</string>
+    <string name="mobile_number_desc">Enter your mobile number to filter announcements. Only payments referencing this number will be spoken. Leave blank to hear all payments.</string>
+    <string name="mobile_number_hint">Mobile number (optional)</string>
+
     <string name="dashboard_title">Dashboard</string>
     <string name="history_title">Transactions</string>
     <string name="settings_title">Settings</string>
@@ -40,7 +44,7 @@
     <string name="supported_apps_title">Supported UPI apps</string>
     <string name="debug_mode">Debug mode</string>
     <string name="debug_mode_desc">Show internal unparsed notification log.</string>
-    <string name="tts_fallback_note">Your selected language voice isn't installed on this device. Announcements are using English.</string>
+    <string name="tts_fallback_note">Your selected language voice isn\'t installed on this device. Announcements are using English.</string>
     <string name="privacy_note_title">Privacy &amp; data handling</string>
     <string name="ok">OK</string>
 </resources>

@@ -12,12 +12,15 @@ interface SettingsRepository {
     val debugModeEnabled: Flow<Boolean>
     val hasAcceptedPrivacyDisclosure: Flow<Boolean>
     val ttsFallbackOccurred: Flow<Boolean>
+    val mobileNumber: Flow<String>
 
     suspend fun isVoiceEnabled(): Boolean = voiceEnabled.first()
 
     suspend fun getLanguage(): VoiceLanguage = language.first()
 
     suspend fun getSpeechRate(): Float = speechRate.first()
+
+    suspend fun getMobileNumber(): String = mobileNumber.first()
 
     suspend fun setVoiceEnabled(enabled: Boolean)
 
@@ -30,4 +33,6 @@ interface SettingsRepository {
     suspend fun setHasAcceptedPrivacyDisclosure(accepted: Boolean)
 
     suspend fun setTtsFallbackOccurred(occurred: Boolean)
+
+    suspend fun setMobileNumber(number: String)
 }

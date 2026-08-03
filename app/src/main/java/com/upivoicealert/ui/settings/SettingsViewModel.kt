@@ -39,6 +39,9 @@ class SettingsViewModel @Inject constructor(
     val ttsFallbackOccurred: StateFlow<Boolean> = settingsRepository.ttsFallbackOccurred
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
+    val mobileNumber: StateFlow<String> = settingsRepository.mobileNumber
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+
     private val _listenerGranted = MutableStateFlow(NotificationAccessHelper.isGranted(context))
     val listenerGranted: StateFlow<Boolean> = _listenerGranted
 
@@ -59,6 +62,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setDebugMode(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setDebugModeEnabled(enabled)
+    }
+
+    fun setMobileNumber(number: String) = viewModelScope.launch {
+        settingsRepository.setMobileNumber(number)
     }
 
     fun refreshPermissionStatus() {

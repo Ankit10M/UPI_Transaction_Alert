@@ -28,6 +28,7 @@ class SettingsDataStore @Inject constructor(
         val DEBUG_MODE = booleanPreferencesKey("debug_mode")
         val HAS_ACCEPTED = booleanPreferencesKey("has_accepted_privacy_disclosure")
         val TTS_FALLBACK = booleanPreferencesKey("tts_fallback_occurred")
+        val MOBILE_NUMBER = stringPreferencesKey("mobile_number")
     }
 
     val voiceEnabled: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.VOICE_ENABLED] ?: true }
@@ -39,6 +40,7 @@ class SettingsDataStore @Inject constructor(
     val debugModeEnabled: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.DEBUG_MODE] ?: false }
     val hasAcceptedPrivacyDisclosure: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.HAS_ACCEPTED] ?: false }
     val ttsFallbackOccurred: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.TTS_FALLBACK] ?: false }
+    val mobileNumber: Flow<String> = context.settingsDataStore.data.map { it[Keys.MOBILE_NUMBER] ?: "" }
 
     suspend fun setVoiceEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { it[Keys.VOICE_ENABLED] = enabled }
@@ -62,5 +64,9 @@ class SettingsDataStore @Inject constructor(
 
     suspend fun setTtsFallbackOccurred(occurred: Boolean) {
         context.settingsDataStore.edit { it[Keys.TTS_FALLBACK] = occurred }
+    }
+
+    suspend fun setMobileNumber(number: String) {
+        context.settingsDataStore.edit { it[Keys.MOBILE_NUMBER] = number }
     }
 }

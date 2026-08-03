@@ -24,6 +24,8 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override val ttsFallbackOccurred: Flow<Boolean> get() = dataStore.ttsFallbackOccurred
 
+    override val mobileNumber: Flow<String> get() = dataStore.mobileNumber
+
     override suspend fun setVoiceEnabled(enabled: Boolean) = dataStore.setVoiceEnabled(enabled)
 
     override suspend fun setLanguage(language: VoiceLanguage) = dataStore.setLanguage(language)
@@ -36,4 +38,6 @@ class SettingsRepositoryImpl @Inject constructor(
         dataStore.setHasAcceptedPrivacyDisclosure(accepted)
 
     override suspend fun setTtsFallbackOccurred(occurred: Boolean) = dataStore.setTtsFallbackOccurred(occurred)
+
+    override suspend fun setMobileNumber(number: String) = dataStore.setMobileNumber(number)
 }

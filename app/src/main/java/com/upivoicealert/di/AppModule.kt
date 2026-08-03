@@ -36,7 +36,7 @@ object AppModule {
      */
     @Provides
     @Singleton
-    fun provideParsers(): List<TransactionParser> = listOf(
+    fun provideParsers(): List<@JvmSuppressWildcards TransactionParser> = listOf(
         GPayParserV1(),
         PhonePeParserV1(),
         PaytmParserV1(),

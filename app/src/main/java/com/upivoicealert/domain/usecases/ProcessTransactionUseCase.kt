@@ -114,13 +114,18 @@ class ProcessTransactionUseCase @Inject constructor(
         // TTS failure must never block the save pipeline (CLAUDE.md Section 8).
         try {
             if (settingsRepository.isVoiceEnabled()) {
-                val language = settingsRepository.getLanguage()
-                val rate = settingsRepository.getSpeechRate()
-                val fellBackToEnglish = voiceEngine.prepare(language, rate)
-                if (fellBackToEnglish && !settingsRepository.ttsFallbackOccurred.first()) {
-                    settingsRepository.setTtsFallbackOccurred(true)
+                val configuredMobile = settingsRepository.getMobileNumber()
+                if (configuredMobile.isBlank() || transaction.rawNotification.contains(configuredMobile)) {
+                    val language = settingsRepository.getLanguage()
+                    val rate = settingsRepository.getSpeechRate()
+                    val fellBackToEnglish = voiceEngine.prepare(language, rate)
+                    if (fellBackToEnglish && !settingsRepository.ttsFallbackOccurred.first()) {
+                        settingsRepository.setTtsFallbackOccurred(true)
+                    }
+                    voiceEngine.speak(announcementTemplates.build(transaction, language))
+                } else {
+                    Log.d(TAG, "Skipping announcement: mobile number mismatch")
                 }
-                voiceEngine.speak(announcementTemplates.build(transaction, language))
             }
         } catch (e: Exception) {
             Log.w(TAG, "Voice announcement failed (transaction already saved)", e)
