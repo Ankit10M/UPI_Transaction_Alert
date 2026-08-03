@@ -1,0 +1,53 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+app/build
+
+# Signing & Secrets
+*.jks
+*.keystore
+*.keystore.properties
+google-services.json
+firebase.json
+.env
+.env.*
+secrets.properties
+
+# Build Outputs
+*.apk
+*.apk.txt
+*.aab
+*.aab.txt
+*.hprof
+
+# Logs
+*.log
+*.log.*
+
+# IDE / Editor
+.navigation/
+*.swp
+*.swo
+*~
+*.tmp
+*.temp
+
+# OS
+Thumbs.db
+desktop.ini
+
+# Sensitive test data
+notification_samples/
+
+# Misc
+*.orig
+*.rej
+.kotlin/
+obj/
+libs/

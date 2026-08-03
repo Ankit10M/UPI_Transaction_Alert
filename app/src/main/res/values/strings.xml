@@ -1,0 +1,46 @@
+<resources>
+    <string name="app_name">UPI Voice Alert</string>
+    <string name="notification_listener_label">UPI payment voice alerts</string>
+
+    <string name="onboarding_title">UPI Voice Alert</string>
+    <string name="onboarding_subtitle">Listen to your payments</string>
+    <string name="onboarding_body">UPI Voice Alert listens for successful payment notifications from Google Pay, PhonePe, Paytm, and BHIM, and announces them out loud — no need to look at your phone.\n\nEverything runs fully offline. Your data never leaves your device.</string>
+    <string name="onboarding_continue">Accept &amp; Continue</string>
+
+    <string name="privacy_title">Privacy explanation</string>
+    <string name="privacy_body">This app only reads notifications from Google Pay, PhonePe, Paytm, and BHIM to detect payment confirmations. It ignores and does not store notifications from any other app. All data stays on your device.</string>
+
+    <string name="permission_title">Set up permissions</string>
+    <string name="permission_notification_access">Notification access</string>
+    <string name="permission_notification_access_desc">Required to read payment notifications. Grant it under Settings &gt; Apps &gt; Special app access &gt; Notification access.</string>
+    <string name="permission_notification_open">Open settings</string>
+    <string name="permission_battery">Battery optimization exemption</string>
+    <string name="permission_battery_desc">Helps keep detection running reliably. Optional.</string>
+    <string name="permission_battery_open">Request exemption</string>
+    <string name="permission_finish">Finish</string>
+
+    <string name="dashboard_title">Dashboard</string>
+    <string name="history_title">Transactions</string>
+    <string name="settings_title">Settings</string>
+    <string name="debug_title">Unparsed notifications</string>
+    <string name="debug_empty">No unparsed notifications.</string>
+    <string name="history_empty">No transactions yet</string>
+    <string name="history_empty_check">Make sure Notification Access is granted, then wait for your next UPI payment.</string>
+
+    <string name="listener_active">Notification listener is active</string>
+    <string name="listener_inactive">Notification listener is inactive</string>
+
+    <string name="dashboard_today_total">Today</string>
+    <string name="dashboard_all_time_total">All-time</string>
+    <string name="dashboard_latest">Latest payment</string>
+
+    <string name="voice_announcements">Voice announcements</string>
+    <string name="language">Language</string>
+    <string name="speech_speed">Speech speed</string>
+    <string name="supported_apps_title">Supported UPI apps</string>
+    <string name="debug_mode">Debug mode</string>
+    <string name="debug_mode_desc">Show internal unparsed notification log.</string>
+    <string name="tts_fallback_note">Your selected language voice isn't installed on this device. Announcements are using English.</string>
+    <string name="privacy_note_title">Privacy &amp; data handling</string>
+    <string name="ok">OK</string>
+</resources>
