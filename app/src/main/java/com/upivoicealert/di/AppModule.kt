@@ -12,6 +12,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -24,10 +25,36 @@ object AppModule {
      */
     @Provides
     @Singleton
+    @Named("filter_keywords")
     fun provideFilterKeywords(@ApplicationContext context: Context): Set<String> =
         context.resources
             .getStringArray(R.array.notification_filter_keywords)
             .map { it.lowercase() }
+            .toSet()
+
+    /**
+     * Financial signal keywords for source-agnostic filtering: a notification
+     * passes the filter if its text contains any of these signals.
+     */
+    @Provides
+    @Singleton
+    @Named("financial_signals")
+    fun provideFinancialSignals(@ApplicationContext context: Context): Set<String> =
+        context.resources
+            .getStringArray(R.array.financial_signal_keywords)
+            .map { it.lowercase() }
+            .toSet()
+
+    /**
+     * Package blocklist of obvious non-financial apps (WhatsApp, Instagram,
+     * YouTube, ...) whose notifications are always rejected.
+     */
+    @Provides
+    @Singleton
+    @Named("blocked_packages")
+    fun provideBlockedPackages(@ApplicationContext context: Context): Set<String> =
+        context.resources
+            .getStringArray(R.array.blocked_notification_packages)
             .toSet()
 
     /**

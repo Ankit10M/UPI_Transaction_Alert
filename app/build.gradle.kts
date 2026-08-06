@@ -42,6 +42,13 @@ android {
     buildFeatures {
         compose = true
     }
+
+    testOptions {
+        unitTests {
+            // NotificationFilter logs via android.util.Log; stub it in JVM tests.
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
