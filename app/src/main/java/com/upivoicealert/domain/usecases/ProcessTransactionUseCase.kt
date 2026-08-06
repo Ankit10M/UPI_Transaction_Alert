@@ -46,17 +46,24 @@ class ProcessTransactionUseCase @Inject constructor(
 ) {
 
     suspend fun processNotification(packageName: String, rawText: String, postTime: Long): ProcessingResult {
+        Log.i(TAG, "PROCESS_START package=$packageName postTime=$postTime text=$rawText")
+
         if (!filter.isPaymentCandidate(packageName, rawText)) {
+            Log.i(TAG, "FILTER_FAIL package=$packageName")
             return ProcessingResult.NOT_A_PAYMENT
         }
+        Log.i(TAG, "FILTER_PASS package=$packageName")
 
         val classification = classifier.classify(rawText)
+        Log.i(TAG, "CLASSIFICATION_RESULT package=$packageName type=${classification.type} status=${classification.status}")
         if (classification.type != TransactionType.RECEIVED || classification.status != TransactionStatus.SUCCESS) {
             return ProcessingResult.IGNORED
         }
 
+        Log.i(TAG, "PARSER_SEARCH package=$packageName")
         val parser = resolver.resolve(packageName, rawText)
         if (parser == null) {
+            Log.i(TAG, "PARSER_NOT_FOUND package=$packageName")
             transactionRepository.addUnparsedNotification(
                 UnparsedNotification(
                     id = UUID.randomUUID().toString(),
@@ -68,6 +75,7 @@ class ProcessTransactionUseCase @Inject constructor(
             )
             return ProcessingResult.IGNORED
         }
+        Log.i(TAG, "PARSER_FOUND package=$packageName parser=${parser.version}")
 
         val parsed = try {
             parser.parse(rawText, postTime)
@@ -135,6 +143,6 @@ class ProcessTransactionUseCase @Inject constructor(
     }
 
     private companion object {
-        const val TAG = "ProcessTransaction"
+        const val TAG = "UPI_DEBUG"
     }
 }
