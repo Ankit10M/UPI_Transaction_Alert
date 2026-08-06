@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Package blocklist: obvious non-financial apps whose notifications are always
+        rejected before the financial-signal check. Extendable without code changes.
+    -->
+    <string-array name="blocked_notification_packages">
+        <item>com.whatsapp</item>
+        <item>com.whatsapp.w4b</item>
+        <item>com.instagram.android</item>
+        <item>com.google.android.youtube</item>
+        <item>com.facebook.katana</item>
+        <item>com.facebook.orca</item>
+        <item>com.twitter.android</item>
+    </string-array>
+</resources>

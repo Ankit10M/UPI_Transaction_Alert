@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Financial signal keywords for source-agnostic notification filtering.
+        A notification passes the filter if its text contains at least one of these
+        (and it is not from a blocked package / does not match a promo keyword).
+        "rs" is matched with word-boundary + digit adjacency in code so it does not
+        false-positive inside words like "transfers" or "years".
+    -->
+    <string-array name="financial_signal_keywords">
+        <item>received</item>
+        <item>credited</item>
+        <item>credit</item>
+        <item>deposited</item>
+        <item>transaction</item>
+        <item>upi</item>
+        <item>inr</item>
+        <item>₹</item>
+        <item>rs</item>
+        <item>amount</item>
+        <item>payment</item>
+        <item>bank</item>
+        <item>account</item>
+        <item>balance</item>
+    </string-array>
+</resources>
