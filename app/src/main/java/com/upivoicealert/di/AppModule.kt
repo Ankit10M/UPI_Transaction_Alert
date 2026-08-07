@@ -4,7 +4,9 @@ import android.content.Context
 import com.upivoicealert.R
 import com.upivoicealert.parser.TransactionParser
 import com.upivoicealert.parser.bhim.BhimParserV1
+import com.upivoicealert.parser.generic.GenericReceivedParserV1
 import com.upivoicealert.parser.gpay.GPayParserV1
+import com.upivoicealert.parser.kotak.KotakParserV1
 import com.upivoicealert.parser.paytm.PaytmParserV1
 import com.upivoicealert.parser.phonepe.PhonePeParserV1
 import dagger.Module
@@ -67,6 +69,8 @@ object AppModule {
         GPayParserV1(),
         PhonePeParserV1(),
         PaytmParserV1(),
-        BhimParserV1()
+        BhimParserV1(),
+        KotakParserV1(),
+        GenericReceivedParserV1()
     )
 }

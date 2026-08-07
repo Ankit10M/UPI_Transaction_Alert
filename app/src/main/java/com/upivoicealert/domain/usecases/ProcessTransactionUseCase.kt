@@ -94,6 +94,9 @@ class ProcessTransactionUseCase @Inject constructor(
         }
 
         val parsedWithAppLabel = parsed.copy(upiApp = PackageNames.labelFor(packageName))
+        Log.i(TAG, "parsed amount=${parsedWithAppLabel.amount}")
+        Log.i(TAG, "parsed sender=${parsedWithAppLabel.sender}")
+        Log.i(TAG, "parsed app=${parsedWithAppLabel.upiApp}")
         return when (val validation = validator.validate(parsedWithAppLabel)) {
             is ValidationResult.Invalid -> {
                 transactionRepository.addUnparsedNotification(

@@ -21,11 +21,11 @@ class AmountToWordsConverter @Inject constructor() {
         }
         return when (language) {
             VoiceLanguage.ENGLISH ->
-                if (paise > 0) "$whole rupees and $paise paise" else "$whole rupees"
+                if (paise > 0) "$whole rupees and ${numberToWordsEnglish(paise.toLong())} paise" else "$whole rupees"
             VoiceLanguage.HINDI ->
-                if (paise > 0) "$whole रुपये और $paise पैसे" else "$whole रुपये"
+                if (paise > 0) "$whole रुपये और ${numberToWordsHindi(paise.toLong())} पैसे" else "$whole रुपये"
             VoiceLanguage.MARATHI ->
-                if (paise > 0) "$whole रुपये आणि $paise पैसे" else "$whole रुपये"
+                if (paise > 0) "$whole रुपये आणि ${numberToWordsMarathi(paise.toLong())} पैसे" else "$whole रुपये"
         }
     }
 

@@ -46,4 +46,58 @@ class TransactionClassifierTest {
         val result = classifier.classify("UPI update for your account")
         assertEquals(TransactionType.SENT, result.type)
     }
+
+    @Test
+    fun `paid you classifies as received`() {
+        val result = classifier.classify("PRIYA paid you ₹10")
+        assertEquals(TransactionType.RECEIVED, result.type)
+    }
+
+    @Test
+    fun `paid you full name classifies as received`() {
+        val result = classifier.classify("PRIYA BRIJESH MISHRA paid you ₹10.00")
+        assertEquals(TransactionType.RECEIVED, result.type)
+    }
+
+    @Test
+    fun `amount credited classifies as received`() {
+        val result = classifier.classify("Amount credited to XX3434")
+        assertEquals(TransactionType.RECEIVED, result.type)
+    }
+
+    @Test
+    fun `got classifies as received`() {
+        val result = classifier.classify("You got ₹200 from Rahul")
+        assertEquals(TransactionType.RECEIVED, result.type)
+    }
+
+    @Test
+    fun `got does not false-positive inside ordinary words`() {
+        val result = classifier.classify("Your forgot password update")
+        assertEquals(TransactionType.SENT, result.type)
+    }
+
+    @Test
+    fun `debited classifies as sent`() {
+        val result = classifier.classify("₹500 debited from your account")
+        assertEquals(TransactionType.SENT, result.type)
+    }
+
+    @Test
+    fun `paid to classifies as sent`() {
+        val result = classifier.classify("You paid to PRIYA ₹300")
+        assertEquals(TransactionType.SENT, result.type)
+    }
+
+    @Test
+    fun `transferred classifies as sent`() {
+        val result = classifier.classify("₹700 transferred from your account")
+        assertEquals(TransactionType.SENT, result.type)
+    }
+
+    @Test
+    fun `received takes priority over sent keywords`() {
+        val result = classifier.classify("₹10 received after transfer")
+        assertEquals(TransactionType.RECEIVED, result.type)
+    }
 }

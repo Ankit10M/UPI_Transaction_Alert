@@ -12,7 +12,9 @@ data class ParsedTransaction(
     val upiApp: String,
     val transactionId: String?,
     val postTime: Long,
-    val rawNotification: String
+    val rawNotification: String,
+    /** Extracted by the parser; defaults to RECEIVED for received-payment parsers. */
+    val transactionType: TransactionType = TransactionType.RECEIVED
 )
 
 fun ParsedTransaction.toTransaction(parserVersion: String): Transaction = Transaction(
@@ -20,7 +22,7 @@ fun ParsedTransaction.toTransaction(parserVersion: String): Transaction = Transa
     amount = amount,
     sender = sender.trim(),
     upiApp = upiApp,
-    transactionType = TransactionType.RECEIVED,
+    transactionType = transactionType,
     status = TransactionStatus.SUCCESS,
     transactionId = transactionId,
     rawNotification = rawNotification,
