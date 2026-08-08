@@ -5,6 +5,7 @@ import com.upivoicealert.parser.AmountExtractor
 import com.upivoicealert.parser.ParsedTransaction
 import com.upivoicealert.parser.ParserException
 import com.upivoicealert.parser.ReceivedFromFormat
+import com.upivoicealert.parser.ReferenceIdExtractor
 import com.upivoicealert.parser.TransactionParser
 import com.upivoicealert.utils.PackageNames
 import javax.inject.Inject
@@ -35,7 +36,7 @@ class GenericReceivedParserV1 @Inject constructor() : TransactionParser {
             amount = amount,
             sender = sender,
             upiApp = "",
-            transactionId = null,
+            transactionId = ReferenceIdExtractor.extract(rawText),
             postTime = postTime,
             rawNotification = rawText,
             transactionType = TransactionType.RECEIVED

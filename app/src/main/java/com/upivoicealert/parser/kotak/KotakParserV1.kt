@@ -5,6 +5,7 @@ import com.upivoicealert.parser.AmountExtractor
 import com.upivoicealert.parser.ParsedTransaction
 import com.upivoicealert.parser.ParserException
 import com.upivoicealert.parser.ReceivedFromFormat
+import com.upivoicealert.parser.ReferenceIdExtractor
 import com.upivoicealert.parser.TransactionParser
 import com.upivoicealert.utils.PackageNames
 import javax.inject.Inject
@@ -15,7 +16,8 @@ import javax.inject.Inject
  *   Text:  "Amount credited to XX3434. Check out details."
  *
  * The pipeline passes the combined title + text into the parser. Extracts:
- * amount, sender, bank/app name (Kotak 811), transaction type (RECEIVED).
+ * amount, sender, bank/app name (Kotak 811), transaction type (RECEIVED) and
+ * the reference ID when the notification carries one.
  */
 class KotakParserV1 @Inject constructor() : TransactionParser {
 
@@ -33,7 +35,7 @@ class KotakParserV1 @Inject constructor() : TransactionParser {
             amount = amount,
             sender = sender,
             upiApp = PackageNames.labelFor(PackageNames.KOTAK),
-            transactionId = null,
+            transactionId = ReferenceIdExtractor.extract(rawText),
             postTime = postTime,
             rawNotification = rawText,
             transactionType = TransactionType.RECEIVED

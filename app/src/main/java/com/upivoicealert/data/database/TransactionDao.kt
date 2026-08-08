@@ -27,11 +27,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE transactionId = :transactionId AND upiApp = :upiApp LIMIT 1")
     suspend fun findByReferenceId(transactionId: String, upiApp: String): TransactionEntity?
 
-    @Query("SELECT * FROM transactions WHERE amount = :amount AND sender = :sender AND upiApp = :upiApp AND createdAt BETWEEN :windowStart AND :windowEnd LIMIT 1")
-    suspend fun findFuzzyDuplicate(
-        amount: Double,
-        sender: String,
-        upiApp: String,
+    @Query("SELECT * FROM transactions WHERE TRIM(rawNotification) = TRIM(:rawNotification) AND createdAt BETWEEN :windowStart AND :windowEnd LIMIT 1")
+    suspend fun findExactDuplicate(
+        rawNotification: String,
         windowStart: Long,
         windowEnd: Long
     ): TransactionEntity?

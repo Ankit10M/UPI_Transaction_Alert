@@ -4,6 +4,7 @@ import com.upivoicealert.domain.model.TransactionType
 import com.upivoicealert.parser.AmountExtractor
 import com.upivoicealert.parser.ParsedTransaction
 import com.upivoicealert.parser.ParserException
+import com.upivoicealert.parser.ReferenceIdExtractor
 import com.upivoicealert.parser.TransactionParser
 import com.upivoicealert.utils.PackageNames
 import javax.inject.Inject
@@ -12,10 +13,11 @@ import javax.inject.Inject
  * Google Pay parser, version 1. Confirmed notification format:
  *   "PRIYA BRIJESH MISHRA paid you ₹10.00"
  *
- * Extracts sender and amount. Transaction type is RECEIVED (the "paid you"
- * phrasing is a payment received). NOTE: patterns are built against the format
- * confirmed during pipeline testing; if GPay changes format, add a V2 parser
- * rather than rewriting this one (CLAUDE.md Module 2, Component 3).
+ * Extracts sender, amount and (when present) the UPI reference ID. Transaction
+ * type is RECEIVED (the "paid you" phrasing is a payment received). NOTE:
+ * patterns are built against the format confirmed during pipeline testing; if
+ * GPay changes format, add a V2 parser rather than rewriting this one
+ * (CLAUDE.md Module 2, Component 3).
  */
 class GPayParserV1 @Inject constructor() : TransactionParser {
 
@@ -38,7 +40,7 @@ class GPayParserV1 @Inject constructor() : TransactionParser {
             amount = amount,
             sender = sender,
             upiApp = PackageNames.labelFor(PackageNames.GPAY),
-            transactionId = null,
+            transactionId = ReferenceIdExtractor.extract(rawText),
             postTime = postTime,
             rawNotification = rawText,
             transactionType = TransactionType.RECEIVED

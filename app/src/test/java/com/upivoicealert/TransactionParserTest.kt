@@ -55,6 +55,31 @@ class TransactionParserTest {
         assertEquals(10.0, parsed.amount, 0.001)
         assertEquals(PackageNames.labelFor(PackageNames.GPAY), parsed.upiApp)
         assertEquals(TransactionType.RECEIVED, parsed.transactionType)
+        assertNull(parsed.transactionId)
+    }
+
+    @Test
+    fun `gpay parser extracts upi reference id when present`() {
+        val parsed = gpay.parse("Rahul paid you ₹10.00 UPI Ref 111111", 1_700_000_000_000L)
+        assertEquals("111111", parsed.transactionId)
+    }
+
+    @Test
+    fun `generic parser extracts reference id when present`() {
+        val parsed = generic.parse(
+            "₹10.00 received from PRIYA BRIJESH MISHRA Ref: 271910140834 Amount credited to XX3434",
+            1_700_000_000_000L
+        )
+        assertEquals("271910140834", parsed.transactionId)
+    }
+
+    @Test
+    fun `kotak parser extracts reference id when present`() {
+        val parsed = kotak.parse(
+            "₹20.00 received from RAHUL KUMAR Ref No 123456789012. Check out details.",
+            1_700_000_000_000L
+        )
+        assertEquals("123456789012", parsed.transactionId)
     }
 
     @Test

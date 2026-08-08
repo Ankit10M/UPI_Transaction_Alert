@@ -5,6 +5,7 @@ import com.upivoicealert.domain.model.Transaction
 import com.upivoicealert.domain.model.TransactionStatus
 import com.upivoicealert.domain.model.TransactionType
 import com.upivoicealert.domain.model.UnparsedNotification
+import com.upivoicealert.domain.model.VoiceLanguage
 import com.upivoicealert.domain.repository.SettingsRepository
 import com.upivoicealert.domain.repository.TransactionRepository
 import com.upivoicealert.filter.NotificationFilter
@@ -119,6 +120,7 @@ class ProcessTransactionUseCase @Inject constructor(
     suspend fun process(transaction: Transaction): ProcessingResult {
         val inserted = transactionRepository.insertTransactionIfNotDuplicate(transaction)
         if (!inserted) {
+            Log.i(DUP_TAG, "SKIP_TRANSACTION id=${transaction.id} amount=${transaction.amount} sender=${transaction.sender} app=${transaction.upiApp} incomingRef=${transaction.transactionId ?: "<none>"} reason=duplicate")
             return ProcessingResult.DUPLICATE
         }
 
@@ -133,7 +135,11 @@ class ProcessTransactionUseCase @Inject constructor(
                     if (fellBackToEnglish && !settingsRepository.ttsFallbackOccurred.first()) {
                         settingsRepository.setTtsFallbackOccurred(true)
                     }
-                    voiceEngine.speak(announcementTemplates.build(transaction, language))
+                    // If the selected language's voice pack is missing, the engine
+                    // fell back to English — build the announcement in English too,
+                    // otherwise an English voice is asked to read Devanagari text.
+                    val effectiveLanguage = if (fellBackToEnglish) VoiceLanguage.ENGLISH else language
+                    voiceEngine.speak(announcementTemplates.build(transaction, effectiveLanguage))
                 } else {
                     Log.d(TAG, "Skipping announcement: mobile number mismatch")
                 }
@@ -147,5 +153,6 @@ class ProcessTransactionUseCase @Inject constructor(
 
     private companion object {
         const val TAG = "UPI_DEBUG"
+        const val DUP_TAG = "UPI_DUPLICATE_DEBUG"
     }
 }

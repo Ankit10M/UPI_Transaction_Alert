@@ -17,9 +17,10 @@ interface TransactionRepository {
     fun observeLatest(): Flow<Transaction?>
 
     /**
-     * Hybrid deduplication (CLAUDE.md Module 4): reference-ID match first, then
-     * amount + sender + app within the configured time window. Returns true only
-     * if the transaction was actually inserted.
+     * Hybrid deduplication (CLAUDE.md Module 4): reference-ID match first (same
+     * ID + app = duplicate; different ID = different payment), then exact same
+     * raw notification within the short window when no reference ID exists.
+     * Returns true only if the transaction was actually inserted.
      */
     suspend fun insertTransactionIfNotDuplicate(transaction: Transaction): Boolean
 
