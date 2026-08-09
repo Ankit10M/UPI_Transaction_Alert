@@ -1,6 +1,7 @@
 package com.upivoicealert.domain.usecases
 
 import android.util.Log
+import com.upivoicealert.domain.model.NotificationSource
 import com.upivoicealert.domain.model.Transaction
 import com.upivoicealert.domain.model.TransactionStatus
 import com.upivoicealert.domain.model.TransactionType
@@ -9,6 +10,7 @@ import com.upivoicealert.domain.model.VoiceLanguage
 import com.upivoicealert.domain.repository.SettingsRepository
 import com.upivoicealert.domain.repository.TransactionRepository
 import com.upivoicealert.filter.NotificationFilter
+import com.upivoicealert.filter.NotificationTextCleaner
 import com.upivoicealert.filter.TransactionClassifier
 import com.upivoicealert.parser.ParserVersionResolver
 import com.upivoicealert.parser.TransactionValidator
@@ -36,6 +38,7 @@ enum class ProcessingResult {
  */
 @Singleton
 class ProcessTransactionUseCase @Inject constructor(
+    private val textCleaner: NotificationTextCleaner,
     private val filter: NotificationFilter,
     private val classifier: TransactionClassifier,
     private val resolver: ParserVersionResolver,
@@ -46,30 +49,44 @@ class ProcessTransactionUseCase @Inject constructor(
     private val voiceEngine: VoiceAnnouncementEngine
 ) {
 
-    suspend fun processNotification(packageName: String, rawText: String, postTime: Long): ProcessingResult {
-        Log.i(TAG, "PROCESS_START package=$packageName postTime=$postTime text=$rawText")
+    suspend fun processNotification(
+        packageName: String,
+        rawText: String,
+        postTime: Long,
+        notificationKey: String? = null
+    ): ProcessingResult {
+        Log.i(TAG, "PROCESS_START package=$packageName postTime=$postTime rawText=$rawText")
 
-        if (!filter.isPaymentCandidate(packageName, rawText)) {
+        // Normalize once at the pipeline entry: the filter, classifier, parsers,
+        // stored raw text and exact-match dedup fallback all see clean text.
+        val text = textCleaner.clean(rawText)
+        Log.i(TAG, "CLEANED_TEXT package=$packageName text=$text")
+        if (text.isBlank()) {
+            Log.i(TAG, "FILTER_FAIL package=$packageName reason=empty after cleaning")
+            return ProcessingResult.NOT_A_PAYMENT
+        }
+
+        if (!filter.isPaymentCandidate(packageName, text)) {
             Log.i(TAG, "FILTER_FAIL package=$packageName")
             return ProcessingResult.NOT_A_PAYMENT
         }
         Log.i(TAG, "FILTER_PASS package=$packageName")
 
-        val classification = classifier.classify(rawText)
+        val classification = classifier.classify(text)
         Log.i(TAG, "CLASSIFICATION_RESULT package=$packageName type=${classification.type} status=${classification.status}")
         if (classification.type != TransactionType.RECEIVED || classification.status != TransactionStatus.SUCCESS) {
             return ProcessingResult.IGNORED
         }
 
         Log.i(TAG, "PARSER_SEARCH package=$packageName")
-        val parser = resolver.resolve(packageName, rawText)
+        val parser = resolver.resolve(packageName, text)
         if (parser == null) {
             Log.i(TAG, "PARSER_NOT_FOUND package=$packageName")
             transactionRepository.addUnparsedNotification(
                 UnparsedNotification(
                     id = UUID.randomUUID().toString(),
                     packageName = packageName,
-                    rawNotification = rawText,
+                    rawNotification = text,
                     failureReason = "no parser matched",
                     createdAt = postTime
                 )
@@ -79,14 +96,14 @@ class ProcessTransactionUseCase @Inject constructor(
         Log.i(TAG, "PARSER_FOUND package=$packageName parser=${parser.version}")
 
         val parsed = try {
-            parser.parse(rawText, postTime)
+            parser.parse(text, postTime)
         } catch (e: Exception) {
             Log.w(TAG, "Parser ${parser.version} failed", e)
             transactionRepository.addUnparsedNotification(
                 UnparsedNotification(
                     id = UUID.randomUUID().toString(),
                     packageName = packageName,
-                    rawNotification = rawText,
+                    rawNotification = text,
                     failureReason = "parse error: ${e.message ?: "unknown"}",
                     createdAt = postTime
                 )
@@ -104,7 +121,7 @@ class ProcessTransactionUseCase @Inject constructor(
                     UnparsedNotification(
                         id = UUID.randomUUID().toString(),
                         packageName = packageName,
-                        rawNotification = rawText,
+                        rawNotification = text,
                         failureReason = validation.reason,
                         createdAt = postTime
                     )
@@ -112,7 +129,18 @@ class ProcessTransactionUseCase @Inject constructor(
                 ProcessingResult.IGNORED
             }
             is ValidationResult.Valid -> {
-                process(validation.transaction.toTransaction(parser.version))
+                // Attach multi-source metadata (schema v2) to the parsed transaction.
+                // rawNotification stays the cleaned text (legacy semantic, unchanged);
+                // originalNotificationText preserves the raw capture for future
+                // reprocessing / cross-source dedup (e.g. a future SMS parser).
+                val enriched = validation.transaction.toTransaction(parser.version).copy(
+                    sourceType = NotificationSource.forPackage(packageName),
+                    packageName = packageName,
+                    notificationKey = notificationKey,
+                    originalNotificationText = rawText,
+                    cleanedNotificationText = text
+                )
+                process(enriched)
             }
         }
     }

@@ -68,7 +68,7 @@ class UpiNotificationListenerService : NotificationListenerService() {
 
             val postTime = sbn.postTime
             serviceScope.launch {
-                processTransactionUseCase.processNotification(packageName, rawText, postTime)
+                processTransactionUseCase.processNotification(packageName, rawText, postTime, sbn.key)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error handling notification", e)

@@ -11,5 +11,13 @@ data class Transaction(
     val rawNotification: String,
     val parserVersion: String,
     val parseStatus: ParseStatus,
-    val createdAt: Long
+    val createdAt: Long,
+    // Multi-source metadata (schema v2). Defaults keep legacy construction paths
+    // (ParsedTransaction.toTransaction, migrated rows) compiling and behaving
+    // exactly as before; the pipeline enriches these via copy().
+    val sourceType: NotificationSource = NotificationSource.UNKNOWN,
+    val packageName: String = "",
+    val notificationKey: String? = null,
+    val originalNotificationText: String = "",
+    val cleanedNotificationText: String = ""
 )

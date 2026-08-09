@@ -15,5 +15,12 @@ data class TransactionEntity(
     val rawNotification: String,
     val parserVersion: String,
     val parseStatus: String,
-    val createdAt: Long
+    val createdAt: Long,
+    // Multi-source metadata (schema v2). Added via MIGRATION_1_2; legacy rows
+    // carry defaults (UNKNOWN / '' / NULL / backfilled from rawNotification).
+    val sourceType: String,
+    val packageName: String,
+    val notificationKey: String?,
+    val originalNotificationText: String,
+    val cleanedNotificationText: String
 )

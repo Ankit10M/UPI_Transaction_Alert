@@ -19,7 +19,9 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
-        Room.databaseBuilder(context, AppDatabase::class.java, "upi_voice_alert.db").build()
+        Room.databaseBuilder(context, AppDatabase::class.java, "upi_voice_alert.db")
+            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .build()
 
     @Provides
     fun provideTransactionDao(db: AppDatabase): TransactionDao = db.transactionDao()

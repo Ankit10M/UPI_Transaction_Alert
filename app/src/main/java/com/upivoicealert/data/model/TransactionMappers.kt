@@ -2,6 +2,7 @@ package com.upivoicealert.data.model
 
 import com.upivoicealert.data.database.TransactionEntity
 import com.upivoicealert.data.database.UnparsedNotificationEntity
+import com.upivoicealert.domain.model.NotificationSource
 import com.upivoicealert.domain.model.ParseStatus
 import com.upivoicealert.domain.model.Transaction
 import com.upivoicealert.domain.model.TransactionStatus
@@ -19,7 +20,12 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     rawNotification = rawNotification,
     parserVersion = parserVersion,
     parseStatus = enumValueOf<ParseStatus>(parseStatus),
-    createdAt = createdAt
+    createdAt = createdAt,
+    sourceType = enumValueOf<NotificationSource>(sourceType),
+    packageName = packageName,
+    notificationKey = notificationKey,
+    originalNotificationText = originalNotificationText,
+    cleanedNotificationText = cleanedNotificationText
 )
 
 fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
@@ -33,7 +39,12 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     rawNotification = rawNotification,
     parserVersion = parserVersion,
     parseStatus = parseStatus.name,
-    createdAt = createdAt
+    createdAt = createdAt,
+    sourceType = sourceType.name,
+    packageName = packageName,
+    notificationKey = notificationKey,
+    originalNotificationText = originalNotificationText,
+    cleanedNotificationText = cleanedNotificationText
 )
 
 fun UnparsedNotificationEntity.toDomain(): UnparsedNotification = UnparsedNotification(
