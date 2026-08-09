@@ -19,5 +19,8 @@ data class Transaction(
     val packageName: String = "",
     val notificationKey: String? = null,
     val originalNotificationText: String = "",
-    val cleanedNotificationText: String = ""
+    val cleanedNotificationText: String = "",
+    // Voice status (schema v3): true when the payment was announced by the TTS
+    // engine at capture time (or replayed later from History).
+    val voiceAnnounced: Boolean = false
 )

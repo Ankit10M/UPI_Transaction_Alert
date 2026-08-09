@@ -25,7 +25,8 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     packageName = packageName,
     notificationKey = notificationKey,
     originalNotificationText = originalNotificationText,
-    cleanedNotificationText = cleanedNotificationText
+    cleanedNotificationText = cleanedNotificationText,
+    voiceAnnounced = voiceAnnounced
 )
 
 fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
@@ -44,7 +45,8 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     packageName = packageName,
     notificationKey = notificationKey,
     originalNotificationText = originalNotificationText,
-    cleanedNotificationText = cleanedNotificationText
+    cleanedNotificationText = cleanedNotificationText,
+    voiceAnnounced = voiceAnnounced
 )
 
 fun UnparsedNotificationEntity.toDomain(): UnparsedNotification = UnparsedNotification(

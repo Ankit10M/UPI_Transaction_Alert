@@ -1,5 +1,6 @@
 package com.upivoicealert.data.database
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -22,5 +23,9 @@ data class TransactionEntity(
     val packageName: String,
     val notificationKey: String?,
     val originalNotificationText: String,
-    val cleanedNotificationText: String
+    val cleanedNotificationText: String,
+    // Voice status (schema v3). Set true when the TTS engine announced the
+    // payment; legacy rows default to false via the v2->v3 migration.
+    @ColumnInfo(defaultValue = "0")
+    val voiceAnnounced: Boolean = false
 )

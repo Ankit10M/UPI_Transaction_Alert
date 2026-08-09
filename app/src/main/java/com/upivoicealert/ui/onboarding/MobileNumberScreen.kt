@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -25,13 +24,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.upivoicealert.R
-import com.upivoicealert.ui.settings.SettingsViewModel
+import com.upivoicealert.ui.components.ShoutPayButton
+import com.upivoicealert.ui.profile.ProfileViewModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun MobileNumberScreen(
     onContinue: () -> Unit,
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val mobileNumber by viewModel.mobileNumber.collectAsStateWithLifecycle()
     var tempNumber by remember(mobileNumber) { mutableStateOf(mobileNumber) }
@@ -65,7 +65,8 @@ fun MobileNumberScreen(
             singleLine = true
         )
 
-        Button(
+        ShoutPayButton(
+            text = stringResource(R.string.onboarding_continue),
             onClick = {
                 scope.launch {
                     viewModel.setMobileNumber(tempNumber)
@@ -75,8 +76,6 @@ fun MobileNumberScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 32.dp)
-        ) {
-            Text(text = stringResource(R.string.onboarding_continue))
-        }
+        )
     }
 }

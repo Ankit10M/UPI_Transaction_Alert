@@ -30,6 +30,12 @@ interface TransactionRepository {
 
     fun observeUnparsedNotifications(): Flow<List<UnparsedNotification>>
 
+    /** Count of unparsed/failed notifications since [since] (missed-announcement proxy). */
+    fun observeUnparsedCountSince(since: Long): Flow<Int>
+
+    /** Marks a stored transaction as announced by the voice engine. */
+    suspend fun markVoiceAnnounced(id: String)
+
     suspend fun getUnparsedNotifications(): List<UnparsedNotification>
 
     suspend fun deleteUnparsedNotification(id: String)

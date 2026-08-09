@@ -31,7 +31,8 @@ class TransactionMappersTest {
         packageName = PackageNames.GPAY,
         notificationKey = "0|com.google.android.apps.nbu.paisa.user|0|12345",
         originalNotificationText = "ANKIT KUMAR BRIJESH SHANKA MISHRA paid you ₹10.00 Tap to view. Tap to view.",
-        cleanedNotificationText = "ANKIT KUMAR BRIJESH SHANKA MISHRA paid you ₹10.00"
+        cleanedNotificationText = "ANKIT KUMAR BRIJESH SHANKA MISHRA paid you ₹10.00",
+        voiceAnnounced = true
     )
 
     @Test
@@ -47,6 +48,7 @@ class TransactionMappersTest {
         assertEquals("ANKIT KUMAR BRIJESH SHANKA MISHRA paid you ₹10.00", domain.cleanedNotificationText)
         // Legacy field keeps its semantic: cleaned text.
         assertEquals(domain.cleanedNotificationText, domain.rawNotification)
+        assertEquals(true, domain.voiceAnnounced)
     }
 
     @Test
@@ -77,5 +79,6 @@ class TransactionMappersTest {
         assertEquals("", back.originalNotificationText)
         assertEquals("", back.cleanedNotificationText)
         assertEquals(legacy.rawNotification, back.rawNotification)
+        assertEquals(false, back.voiceAnnounced)
     }
 }

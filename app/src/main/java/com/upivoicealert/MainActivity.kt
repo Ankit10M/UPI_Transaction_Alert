@@ -8,7 +8,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.upivoicealert.domain.repository.SettingsRepository
 import com.upivoicealert.ui.navigation.MainNavHost
 import com.upivoicealert.ui.navigation.OnboardingNavHost
-import com.upivoicealert.ui.theme.UPIVoiceAlertTheme
+import com.upivoicealert.ui.theme.ShoutPayTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -24,14 +24,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            UPIVoiceAlertTheme {
+            ShoutPayTheme {
                 val consented by settingsRepository.hasAcceptedPrivacyDisclosure
-                    .collectAsStateWithLifecycle(initialValue = false)
-                val debugMode by settingsRepository.debugModeEnabled
                     .collectAsStateWithLifecycle(initialValue = false)
 
                 if (consented) {
-                    MainNavHost(debugMode = debugMode)
+                    MainNavHost()
                 } else {
                     OnboardingNavHost(
                         onFinished = {

@@ -1,4 +1,4 @@
-package com.upivoicealert.ui.settings
+package com.upivoicealert.ui.profile
 
 import android.content.Context
 import android.content.Intent
@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class SettingsViewModel @Inject constructor(
+class ProfileViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository
 ) : ViewModel() {
@@ -40,6 +40,9 @@ class SettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     val mobileNumber: StateFlow<String> = settingsRepository.mobileNumber
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+
+    val userName: StateFlow<String> = settingsRepository.userName
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
 
     private val _listenerGranted = MutableStateFlow(NotificationAccessHelper.isGranted(context))
@@ -66,6 +69,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setMobileNumber(number: String) = viewModelScope.launch {
         settingsRepository.setMobileNumber(number)
+    }
+
+    fun setUserName(name: String) = viewModelScope.launch {
+        settingsRepository.setUserName(name)
     }
 
     fun refreshPermissionStatus() {

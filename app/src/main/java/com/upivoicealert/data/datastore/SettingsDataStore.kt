@@ -29,6 +29,14 @@ class SettingsDataStore @Inject constructor(
         val HAS_ACCEPTED = booleanPreferencesKey("has_accepted_privacy_disclosure")
         val TTS_FALLBACK = booleanPreferencesKey("tts_fallback_occurred")
         val MOBILE_NUMBER = stringPreferencesKey("mobile_number")
+        val USER_NAME = stringPreferencesKey("user_name")
+
+        /**
+         * Master switch for the voice-alert service. When false the listener
+         * service stops processing notifications entirely (the big START/STOP
+         * control on the Home screen). Defaults to true.
+         */
+        val MONITORING_ENABLED = booleanPreferencesKey("monitoring_enabled")
     }
 
     val voiceEnabled: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.VOICE_ENABLED] ?: true }
@@ -41,6 +49,8 @@ class SettingsDataStore @Inject constructor(
     val hasAcceptedPrivacyDisclosure: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.HAS_ACCEPTED] ?: false }
     val ttsFallbackOccurred: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.TTS_FALLBACK] ?: false }
     val mobileNumber: Flow<String> = context.settingsDataStore.data.map { it[Keys.MOBILE_NUMBER] ?: "" }
+    val userName: Flow<String> = context.settingsDataStore.data.map { it[Keys.USER_NAME] ?: "" }
+    val monitoringEnabled: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.MONITORING_ENABLED] ?: true }
 
     suspend fun setVoiceEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { it[Keys.VOICE_ENABLED] = enabled }
@@ -68,5 +78,13 @@ class SettingsDataStore @Inject constructor(
 
     suspend fun setMobileNumber(number: String) {
         context.settingsDataStore.edit { it[Keys.MOBILE_NUMBER] = number }
+    }
+
+    suspend fun setUserName(name: String) {
+        context.settingsDataStore.edit { it[Keys.USER_NAME] = name }
+    }
+
+    suspend fun setMonitoringEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { it[Keys.MONITORING_ENABLED] = enabled }
     }
 }

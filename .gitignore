@@ -51,3 +51,6 @@ notification_samples/
 .kotlin/
 obj/
 libs/
+
+# Design files
+app_design/

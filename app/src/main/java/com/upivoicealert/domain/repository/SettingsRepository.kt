@@ -13,6 +13,10 @@ interface SettingsRepository {
     val hasAcceptedPrivacyDisclosure: Flow<Boolean>
     val ttsFallbackOccurred: Flow<Boolean>
     val mobileNumber: Flow<String>
+    val userName: Flow<String>
+
+    /** Master switch: when false the notification listener stops processing. */
+    val monitoringEnabled: Flow<Boolean>
 
     suspend fun isVoiceEnabled(): Boolean = voiceEnabled.first()
 
@@ -21,6 +25,10 @@ interface SettingsRepository {
     suspend fun getSpeechRate(): Float = speechRate.first()
 
     suspend fun getMobileNumber(): String = mobileNumber.first()
+
+    suspend fun getUserName(): String = userName.first()
+
+    suspend fun isMonitoringEnabled(): Boolean = monitoringEnabled.first()
 
     suspend fun setVoiceEnabled(enabled: Boolean)
 
@@ -35,4 +43,8 @@ interface SettingsRepository {
     suspend fun setTtsFallbackOccurred(occurred: Boolean)
 
     suspend fun setMobileNumber(number: String)
+
+    suspend fun setUserName(name: String)
+
+    suspend fun setMonitoringEnabled(enabled: Boolean)
 }

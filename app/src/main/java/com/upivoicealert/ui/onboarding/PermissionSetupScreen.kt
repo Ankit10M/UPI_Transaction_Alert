@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.upivoicealert.R
+import com.upivoicealert.ui.components.ShoutPayButton
 import com.upivoicealert.utils.BatteryOptimizationHelper
 import com.upivoicealert.utils.NotificationAccessHelper
 
@@ -80,14 +80,13 @@ fun PermissionSetupScreen(onFinish: () -> Unit) {
             onAction = { BatteryOptimizationHelper.requestExemption(context) }
         )
 
-        Button(
+        ShoutPayButton(
+            text = stringResource(R.string.permission_finish),
             onClick = onFinish,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 8.dp)
-        ) {
-            Text(stringResource(R.string.permission_finish))
-        }
+        )
     }
 }
 

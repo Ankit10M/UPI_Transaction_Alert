@@ -57,6 +57,13 @@ class ProcessTransactionUseCase @Inject constructor(
     ): ProcessingResult {
         Log.i(TAG, "PROCESS_START package=$packageName postTime=$postTime rawText=$rawText")
 
+        // Master service switch (Home screen START/STOP): when monitoring is
+        // disabled nothing enters the pipeline — no save, no announcement.
+        if (!settingsRepository.isMonitoringEnabled()) {
+            Log.i(TAG, "MONITORING_DISABLED package=$packageName (service stopped by user)")
+            return ProcessingResult.IGNORED
+        }
+
         // Normalize once at the pipeline entry: the filter, classifier, parsers,
         // stored raw text and exact-match dedup fallback all see clean text.
         val text = textCleaner.clean(rawText)
@@ -146,34 +153,43 @@ class ProcessTransactionUseCase @Inject constructor(
     }
 
     suspend fun process(transaction: Transaction): ProcessingResult {
-        val inserted = transactionRepository.insertTransactionIfNotDuplicate(transaction)
+        // Decide whether this transaction will be announced BEFORE persisting, so
+        // the stored voiceAnnounced flag is accurate (schema v3). TTS failure must
+        // never block the save pipeline (CLAUDE.md Section 8), so the flag records
+        // the announcement decision, and the actual speak() is best-effort.
+        val shouldAnnounce = runCatching { settingsRepository.isVoiceEnabled() }.getOrDefault(false)
+        val transactionWithVoice = if (shouldAnnounce) {
+            val configuredMobile = runCatching { settingsRepository.getMobileNumber() }.getOrDefault("")
+            val mobileMatches = configuredMobile.isBlank() || transaction.rawNotification.contains(configuredMobile)
+            transaction.copy(voiceAnnounced = mobileMatches)
+        } else {
+            transaction.copy(voiceAnnounced = false)
+        }
+
+        val inserted = transactionRepository.insertTransactionIfNotDuplicate(transactionWithVoice)
         if (!inserted) {
             Log.i(DUP_TAG, "SKIP_TRANSACTION id=${transaction.id} amount=${transaction.amount} sender=${transaction.sender} app=${transaction.upiApp} incomingRef=${transaction.transactionId ?: "<none>"} reason=duplicate")
             return ProcessingResult.DUPLICATE
         }
 
-        // TTS failure must never block the save pipeline (CLAUDE.md Section 8).
-        try {
-            if (settingsRepository.isVoiceEnabled()) {
-                val configuredMobile = settingsRepository.getMobileNumber()
-                if (configuredMobile.isBlank() || transaction.rawNotification.contains(configuredMobile)) {
-                    val language = settingsRepository.getLanguage()
-                    val rate = settingsRepository.getSpeechRate()
-                    val fellBackToEnglish = voiceEngine.prepare(language, rate)
-                    if (fellBackToEnglish && !settingsRepository.ttsFallbackOccurred.first()) {
-                        settingsRepository.setTtsFallbackOccurred(true)
-                    }
-                    // If the selected language's voice pack is missing, the engine
-                    // fell back to English — build the announcement in English too,
-                    // otherwise an English voice is asked to read Devanagari text.
-                    val effectiveLanguage = if (fellBackToEnglish) VoiceLanguage.ENGLISH else language
-                    voiceEngine.speak(announcementTemplates.build(transaction, effectiveLanguage))
-                } else {
-                    Log.d(TAG, "Skipping announcement: mobile number mismatch")
+        if (transactionWithVoice.voiceAnnounced) {
+            try {
+                val language = settingsRepository.getLanguage()
+                val rate = settingsRepository.getSpeechRate()
+                val fellBackToEnglish = voiceEngine.prepare(language, rate)
+                if (fellBackToEnglish && !settingsRepository.ttsFallbackOccurred.first()) {
+                    settingsRepository.setTtsFallbackOccurred(true)
                 }
+                // If the selected language's voice pack is missing, the engine
+                // fell back to English — build the announcement in English too,
+                // otherwise an English voice is asked to read Devanagari text.
+                val effectiveLanguage = if (fellBackToEnglish) VoiceLanguage.ENGLISH else language
+                voiceEngine.speak(announcementTemplates.build(transactionWithVoice, effectiveLanguage))
+            } catch (e: Exception) {
+                Log.w(TAG, "Voice announcement failed (transaction already saved)", e)
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "Voice announcement failed (transaction already saved)", e)
+        } else {
+            Log.d(TAG, "Skipping announcement: voice disabled or mobile number mismatch")
         }
 
         return ProcessingResult.SAVED

@@ -37,6 +37,10 @@ interface TransactionDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(entity: TransactionEntity): Long
 
+    /** Marks a transaction as having been announced by the voice engine. */
+    @Query("UPDATE transactions SET voiceAnnounced = 1 WHERE id = :id")
+    suspend fun markVoiceAnnounced(id: String)
+
     @Query("DELETE FROM transactions")
     suspend fun clearAll()
 }

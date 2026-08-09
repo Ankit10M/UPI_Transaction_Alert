@@ -110,6 +110,13 @@ class TransactionRepositoryImpl @Inject constructor(
     override fun observeUnparsedNotifications(): Flow<List<UnparsedNotification>> =
         unparsedNotificationDao.observeAll().map { list -> list.map { it.toDomain() } }
 
+    override fun observeUnparsedCountSince(since: Long): Flow<Int> =
+        unparsedNotificationDao.observeCountSince(since)
+
+    override suspend fun markVoiceAnnounced(id: String) {
+        transactionDao.markVoiceAnnounced(id)
+    }
+
     override suspend fun getUnparsedNotifications(): List<UnparsedNotification> =
         unparsedNotificationDao.getAll().map { it.toDomain() }
 

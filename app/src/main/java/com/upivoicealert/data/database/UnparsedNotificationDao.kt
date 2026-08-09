@@ -15,6 +15,9 @@ interface UnparsedNotificationDao {
     @Query("SELECT * FROM unparsed_notifications ORDER BY createdAt ASC")
     suspend fun getAll(): List<UnparsedNotificationEntity>
 
+    @Query("SELECT COUNT(*) FROM unparsed_notifications WHERE createdAt >= :since")
+    fun observeCountSince(since: Long): Flow<Int>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(entity: UnparsedNotificationEntity): Long
 

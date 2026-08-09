@@ -7,7 +7,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [TransactionEntity::class, UnparsedNotificationEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -26,6 +26,17 @@ abstract class AppDatabase : RoomDatabase() {
          *     from rawNotification (the best available text for old rows; for
          *     rows written after the cleaner task this is the cleaned text).
          */
+        /**
+         * v2 -> v3: voice announcement status on the transactions table.
+         * Purely additive — a single ALTER TABLE ADD COLUMN, no data loss.
+         * Legacy rows default to false (not announced).
+         */
+        val MIGRATION_2_3: Migration = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE transactions ADD COLUMN voiceAnnounced INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         val MIGRATION_1_2: Migration = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE transactions ADD COLUMN sourceType TEXT NOT NULL DEFAULT 'UNKNOWN'")
