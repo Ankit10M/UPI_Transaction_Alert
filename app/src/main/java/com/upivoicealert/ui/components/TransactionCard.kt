@@ -61,25 +61,25 @@ fun TransactionCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(20.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 SenderAvatar(transaction.sender)
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(start = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                        .padding(start = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     Text(
                         text = transaction.sender.ifBlank { stringResource(R.string.unknown_sender) },
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = "${appLabel(transaction)} · ${DateTimeUtils.formatTime(transaction.createdAt)}",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -88,20 +88,20 @@ fun TransactionCard(
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = "+ ${DateTimeUtils.formatCurrency(transaction.amount)}",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = SuccessGreen
                     )
                     if (showReplay) {
                         OutlinedButton(
                             onClick = onReplay,
-                            modifier = Modifier.padding(top = 6.dp),
+                            modifier = Modifier.padding(top = 8.dp),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.VolumeUp,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                             Text(
                                 text = stringResource(R.string.history_replay),
@@ -115,7 +115,7 @@ fun TransactionCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, bottom = 14.dp),
+                    .padding(start = 20.dp, end = 20.dp, bottom = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 AnnouncedChip(announced = transaction.voiceAnnounced, labelOverride = chipLabel)
@@ -135,28 +135,28 @@ fun AnnouncedChip(
     Row(
         modifier = modifier
             .background(color = background, shape = RoundedCornerShape(50))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = Icons.Filled.VolumeUp,
             contentDescription = null,
             tint = content,
-            modifier = Modifier.size(14.dp)
+            modifier = Modifier.size(16.dp)
         )
         Text(
             text = labelOverride ?: stringResource(
                 if (announced) R.string.history_announced else R.string.history_not_announced
             ),
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelMedium,
             color = content,
-            modifier = Modifier.padding(start = 5.dp)
+            modifier = Modifier.padding(start = 6.dp)
         )
     }
 }
 
 @Composable
-private fun SenderAvatar(sender: String, size: Int = 44) {
+private fun SenderAvatar(sender: String, size: Int = 50) {
     val initials = sender
         .trim()
         .split(" ")

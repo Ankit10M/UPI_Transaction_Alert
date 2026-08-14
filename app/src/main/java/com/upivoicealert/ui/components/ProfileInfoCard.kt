@@ -49,12 +49,12 @@ fun ProfileInfoCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(22.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier
-                    .size(64.dp)
+                    .size(72.dp)
                     .background(
                         brush = Brush.linearGradient(listOf(ShoutPayIndigo, ShoutPayIndigoDark)),
                         shape = CircleShape
@@ -71,7 +71,7 @@ fun ProfileInfoCard(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 16.dp)
+                    .padding(start = 18.dp)
             ) {
                 Text(
                     text = name.ifBlank { stringResource(R.string.profile_default_name) },
@@ -80,9 +80,9 @@ fun ProfileInfoCard(
                 )
                 Text(
                     text = phone.ifBlank { stringResource(R.string.profile_phone_missing) },
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 2.dp)
+                    modifier = Modifier.padding(top = 3.dp)
                 )
             }
             IconButton(onClick = onEdit) {

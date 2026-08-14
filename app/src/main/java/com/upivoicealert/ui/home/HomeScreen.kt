@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -73,9 +74,9 @@ fun HomeScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
     ) {
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
         HomeTopBar(onAddNumber = { showAddNumber = true })
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(32.dp))
 
         // ─── Signature voice control ───────────────────────────────────────
         Column(
@@ -93,7 +94,7 @@ fun HomeScreen(
                 onClick = viewModel::toggleService
             )
         }
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(32.dp))
 
         // ─── ShoutPay Protection status ────────────────────────────────────
         ProtectionCard(
@@ -103,20 +104,20 @@ fun HomeScreen(
                 ProtectionDefaults.battery(uiState.batteryPermissionGranted)
             )
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(20.dp))
 
         // ─── Today's activity ──────────────────────────────────────────────
         ActivityCard(
             announcedCount = uiState.todayTransactionCount,
             missedCount = uiState.missedTodayCount
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(20.dp))
 
         // ─── Recent payment ────────────────────────────────────────────────
         Text(
             text = stringResource(R.string.home_recent_title),
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(bottom = 10.dp)
+            modifier = Modifier.padding(bottom = 12.dp)
         )
         val latest = uiState.latestTransaction
         if (latest != null) {
@@ -131,7 +132,7 @@ fun HomeScreen(
                 icon = Icons.Filled.NotificationsNone
             )
         }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(32.dp))
     }
 
     if (showAddNumber) {
@@ -155,7 +156,8 @@ private fun HomeTopBar(onAddNumber: () -> Unit) {
         ShoutPayLogo(modifier = Modifier.weight(1f))
         OutlinedButton(
             onClick = onAddNumber,
-            shape = MaterialTheme.shapes.small
+            shape = MaterialTheme.shapes.small,
+            modifier = Modifier.defaultMinSize(minHeight = 48.dp)
         ) {
             Text(
                 text = stringResource(R.string.home_add_number),

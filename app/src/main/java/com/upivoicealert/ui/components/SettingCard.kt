@@ -59,7 +59,7 @@ fun SettingCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             SettingIcon(icon)
@@ -72,9 +72,9 @@ fun SettingCard(
                 if (description != null) {
                     Text(
                         text = description,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp)
+                        modifier = Modifier.padding(top = 3.dp)
                     )
                 }
             }
@@ -161,7 +161,7 @@ fun PermissionSettingCard(
 private fun SettingIcon(icon: ImageVector) {
     Box(
         modifier = Modifier
-            .size(42.dp)
+            .size(46.dp)
             .background(
                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
                 shape = CircleShape
@@ -172,7 +172,7 @@ private fun SettingIcon(icon: ImageVector) {
             imageVector = icon,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(22.dp)
         )
     }
 }

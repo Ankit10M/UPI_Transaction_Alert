@@ -60,12 +60,12 @@ fun ProtectionCard(
                 text = stringResource(R.string.home_protection_title),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
             )
             rows.forEachIndexed { index, row ->
                 if (index > 0) {
                     HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 16.dp),
+                        modifier = Modifier.padding(horizontal = 20.dp),
                         color = MaterialTheme.colorScheme.outlineVariant
                     )
                 }
@@ -80,12 +80,12 @@ private fun ProtectionRowItem(row: ProtectionRow) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
-                .size(36.dp)
+                .size(40.dp)
                 .background(
                     color = if (row.ok) SuccessGreenLight else SurfaceVariantLight,
                     shape = CircleShape
@@ -96,7 +96,7 @@ private fun ProtectionRowItem(row: ProtectionRow) {
                 imageVector = row.icon,
                 contentDescription = null,
                 tint = if (row.ok) SuccessGreen else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(20.dp)
             )
         }
         Text(
@@ -109,7 +109,7 @@ private fun ProtectionRowItem(row: ProtectionRow) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
-                    .size(8.dp)
+                    .size(9.dp)
                     .background(
                         color = if (row.ok) SuccessGreen else ErrorRed,
                         shape = CircleShape

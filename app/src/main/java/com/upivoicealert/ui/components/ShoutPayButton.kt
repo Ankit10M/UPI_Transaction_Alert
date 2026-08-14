@@ -34,10 +34,10 @@ fun ShoutPayButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.defaultMinSize(minHeight = 56.dp),
+        modifier = modifier.defaultMinSize(minHeight = 62.dp),
         enabled = enabled,
         shape = RoundedCornerShape(16.dp),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 14.dp),
+        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = ShoutPayIndigo,
             contentColor = OnIndigo,

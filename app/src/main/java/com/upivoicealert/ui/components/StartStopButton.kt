@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
@@ -20,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -49,14 +51,16 @@ fun StartStopButton(
     subtitle: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    diameter: Dp = 190.dp
+    diameter: Dp = 240.dp
 ) {
     val transition = rememberInfiniteTransition(label = "shoutPulse")
 
     if (active) {
+        // Pulse rings expand to 1.3x the disc — capped so they never clip on
+        // narrower (320dp) screens.
         val scale1 by transition.animateFloat(
             initialValue = 1f,
-            targetValue = 1.6f,
+            targetValue = 1.3f,
             animationSpec = infiniteRepeatable(
                 animation = tween(1500, easing = LinearEasing),
                 repeatMode = RepeatMode.Restart
@@ -64,7 +68,7 @@ fun StartStopButton(
             label = "pulseScale1"
         )
         val alpha1 by transition.animateFloat(
-            initialValue = 0.5f,
+            initialValue = 0.45f,
             targetValue = 0f,
             animationSpec = infiniteRepeatable(
                 animation = tween(1500, easing = LinearEasing),
@@ -74,7 +78,7 @@ fun StartStopButton(
         )
         val scale2 by transition.animateFloat(
             initialValue = 1f,
-            targetValue = 1.6f,
+            targetValue = 1.3f,
             animationSpec = infiniteRepeatable(
                 animation = tween(1500, easing = LinearEasing, delayMillis = 750),
                 repeatMode = RepeatMode.Restart
@@ -82,7 +86,7 @@ fun StartStopButton(
             label = "pulseScale2"
         )
         val alpha2 by transition.animateFloat(
-            initialValue = 0.5f,
+            initialValue = 0.45f,
             targetValue = 0f,
             animationSpec = infiniteRepeatable(
                 animation = tween(1500, easing = LinearEasing, delayMillis = 750),
@@ -127,9 +131,12 @@ private fun Disc(label: String, active: Boolean, onClick: () -> Unit, diameter: 
     } else {
         Brush.linearGradient(listOf(ShoutPayIndigo, ShoutPayIndigoDark))
     }
+    // Softer shadow while active so it never drowns out the pulse rings.
+    val elevation = if (active) 6.dp else 12.dp
     Column(
         modifier = Modifier
             .size(diameter)
+            .shadow(elevation = elevation, shape = CircleShape, clip = false)
             .background(brush = brush, shape = CircleShape)
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -138,9 +145,9 @@ private fun Disc(label: String, active: Boolean, onClick: () -> Unit, diameter: 
         Text(
             text = label,
             color = OnIndigo,
-            fontSize = 32.sp,
+            fontSize = 42.sp,
             fontWeight = FontWeight.Bold,
-            letterSpacing = 4.sp
+            letterSpacing = 3.sp
         )
     }
 }
@@ -149,8 +156,11 @@ private fun Disc(label: String, active: Boolean, onClick: () -> Unit, diameter: 
 private fun Subtitle(text: String) {
     Text(
         text = text,
-        style = MaterialTheme.typography.bodyMedium,
+        style = MaterialTheme.typography.bodyLarge,
+        fontWeight = FontWeight.Medium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.alpha(1f)
+        modifier = Modifier
+            .alpha(1f)
+            .padding(top = 16.dp)
     )
 }

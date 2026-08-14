@@ -40,7 +40,7 @@ fun EmptyStateView(
     ) {
         Box(
             modifier = Modifier
-                .size(88.dp)
+                .size(96.dp)
                 .background(
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = CircleShape
@@ -51,7 +51,7 @@ fun EmptyStateView(
                 imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(44.dp)
             )
         }
         Text(
@@ -63,10 +63,10 @@ fun EmptyStateView(
         if (subtitle != null) {
             Text(
                 text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier.padding(top = 10.dp)
             )
         }
     }

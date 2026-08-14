@@ -46,11 +46,11 @@ fun HistoryScreen(viewModel: HistoryViewModel = hiltViewModel()) {
 
     Column(modifier = Modifier.fillMaxSize()) {
         // ─── Search + filters ──────────────────────────────────────────────
-        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
             Text(
                 text = stringResource(R.string.history_title),
                 style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 14.dp)
             )
             OutlinedTextField(
                 value = searchQuery,
@@ -107,8 +107,8 @@ fun HistoryScreen(viewModel: HistoryViewModel = hiltViewModel()) {
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 items(transactions, key = { it.id }) { transaction ->
                     TransactionCard(

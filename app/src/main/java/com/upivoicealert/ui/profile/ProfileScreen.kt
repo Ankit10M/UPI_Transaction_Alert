@@ -101,7 +101,7 @@ fun ProfileScreen(
             phone = mobileNumber,
             onEdit = { showEditProfile = true }
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(20.dp))
 
         // ─── Voice announcement toggle ─────────────────────────────────────
         ToggleSettingCard(
@@ -111,7 +111,7 @@ fun ProfileScreen(
             checked = voiceEnabled,
             onCheckedChange = viewModel::setVoiceEnabled
         )
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(14.dp))
 
         // ─── Voice assistant detail (language + speed) ────────────────────
         Card(
@@ -120,7 +120,7 @@ fun ProfileScreen(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = stringResource(R.string.language),
@@ -161,7 +161,7 @@ fun ProfileScreen(
                 )
             }
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(14.dp))
 
         // ─── Permissions (real status, opens system settings) ─────────────
         PermissionSettingCard(
@@ -174,7 +174,7 @@ fun ProfileScreen(
             actionLabel = stringResource(R.string.permission_notification_open),
             onAction = viewModel::openNotificationAccessSettings
         )
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(14.dp))
         PermissionSettingCard(
             icon = Icons.Filled.BatteryChargingFull,
             title = stringResource(R.string.permission_battery),
@@ -185,7 +185,7 @@ fun ProfileScreen(
             actionLabel = stringResource(R.string.permission_battery_open),
             onAction = viewModel::requestBatteryExemption
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(20.dp))
 
         // ─── Connected apps ────────────────────────────────────────────────
         Text(
@@ -195,9 +195,9 @@ fun ProfileScreen(
         )
         Text(
             text = stringResource(R.string.profile_connected_apps_desc),
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 12.dp)
+            modifier = Modifier.padding(bottom = 14.dp)
         )
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -212,7 +212,7 @@ fun ProfileScreen(
                 }
             }
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(14.dp))
 
         // ─── Terms & Privacy ───────────────────────────────────────────────
         SettingCard(
@@ -220,7 +220,7 @@ fun ProfileScreen(
             title = stringResource(R.string.privacy_note_title),
             onClick = { showPrivacy = true }
         )
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(14.dp))
 
         // ─── Debug mode (hidden feature, keeps existing debug screen alive) ─
         ToggleSettingCard(
@@ -231,14 +231,14 @@ fun ProfileScreen(
             onCheckedChange = viewModel::setDebugMode
         )
         if (debugMode) {
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(14.dp))
             SettingCard(
                 icon = Icons.Filled.CheckCircle,
                 title = stringResource(R.string.debug_title),
                 onClick = onOpenDebug
             )
         }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(32.dp))
     }
 
     if (showEditProfile) {
