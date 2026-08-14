@@ -1,6 +1,8 @@
 package com.upivoicealert.service
 
 import android.util.Log
+import com.upivoicealert.domain.model.ServiceStatus
+import com.upivoicealert.domain.repository.ServiceStateRepository
 import com.upivoicealert.domain.repository.SettingsRepository
 import com.upivoicealert.voice.VoiceAnnouncementEngine
 import javax.inject.Inject
@@ -19,8 +21,9 @@ import kotlinx.coroutines.launch
  * Single control surface between the UI and the notification service.
  *
  * The big START/STOP control on the Home screen is the ONLY place the service
- * state is changed: [start] / [stop] / [toggle] persist the monitoring flag,
- * which [com.upivoicealert.domain.usecases.ProcessTransactionUseCase] reads at
+ * state is changed: [start] / [stop] / [toggle] persist the run state via
+ * [ServiceStateRepository] (DataStore), which
+ * [com.upivoicealert.domain.usecases.ProcessTransactionUseCase] reads at
  * pipeline entry to gate processing. The UI only controls and observes this
  * controller — it never touches the pipeline directly.
  *
@@ -35,6 +38,7 @@ import kotlinx.coroutines.launch
  */
 @Singleton
 class ServiceController @Inject constructor(
+    private val serviceStateRepository: ServiceStateRepository,
     private val settingsRepository: SettingsRepository,
     private val voiceEngine: VoiceAnnouncementEngine
 ) {
@@ -53,7 +57,7 @@ class ServiceController @Inject constructor(
     init {
         // Restore the persisted state so the UI reflects reality after restart.
         scope.launch {
-            val persisted = settingsRepository.isMonitoringEnabled()
+            val persisted = serviceStateRepository.getStatus() == ServiceStatus.SERVICE_RUNNING
             _isRunning.value = persisted
             Log.i(TAG, "STATE_RESTORED isRunning=$persisted")
         }
@@ -61,7 +65,7 @@ class ServiceController @Inject constructor(
 
     fun start() = scope.launch {
         if (_isRunning.value) return@launch
-        settingsRepository.setMonitoringEnabled(true)
+        serviceStateRepository.setRunning(true)
         _isRunning.value = true
         Log.i(TAG, "SERVICE_STARTED monitoring=enabled — notifications will be processed and announced")
 
@@ -79,7 +83,7 @@ class ServiceController @Inject constructor(
 
     fun stop() = scope.launch {
         if (!_isRunning.value) return@launch
-        settingsRepository.setMonitoringEnabled(false)
+        serviceStateRepository.setRunning(false)
         _isRunning.value = false
         Log.i(TAG, "SERVICE_STOPPED monitoring=disabled — notifications ignored, battery saved")
     }

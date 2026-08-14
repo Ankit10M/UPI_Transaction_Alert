@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -27,6 +28,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.upivoicealert.R
+import com.upivoicealert.ui.business.BusinessScreen
 import com.upivoicealert.ui.debug.UnparsedNotificationsScreen
 import com.upivoicealert.ui.history.HistoryScreen
 import com.upivoicealert.ui.home.HomeScreen
@@ -34,12 +36,17 @@ import com.upivoicealert.ui.onboarding.LandingScreen
 import com.upivoicealert.ui.onboarding.MobileNumberScreen
 import com.upivoicealert.ui.onboarding.PermissionSetupScreen
 import com.upivoicealert.ui.onboarding.PrivacyExplanationScreen
+import com.upivoicealert.ui.pricing.PricingScreen
 import com.upivoicealert.ui.profile.ProfileScreen
+import com.upivoicealert.ui.verification.VerificationScreen
 
 object Routes {
     const val HOME = "home"
     const val HISTORY = "history"
+    const val BUSINESS = "business"
     const val PROFILE = "profile"
+    const val VERIFICATION = "verification"
+    const val PRICING = "pricing"
     const val UNPARSED = "unparsed"
     const val LANDING = "landing"
     const val PRIVACY = "privacy"
@@ -57,6 +64,7 @@ private data class BottomTab(
 private fun bottomTabs(): List<BottomTab> = listOf(
     BottomTab(Routes.HOME, stringResource(R.string.dashboard_title), Icons.Filled.Home),
     BottomTab(Routes.HISTORY, stringResource(R.string.history_title), Icons.Filled.ReceiptLong),
+    BottomTab(Routes.BUSINESS, stringResource(R.string.business_title), Icons.Filled.Storefront),
     BottomTab(Routes.PROFILE, stringResource(R.string.profile_title), Icons.Filled.Person)
 )
 
@@ -122,11 +130,26 @@ fun MainNavHost() {
             modifier = Modifier.padding(padding)
         ) {
             composable(Routes.HOME) {
-                HomeScreen(onOpenHistory = { navController.navigate(Routes.HISTORY) })
+                HomeScreen(
+                    onOpenHistory = { navController.navigate(Routes.HISTORY) },
+                    onOpenVerification = { navController.navigate(Routes.VERIFICATION) }
+                )
             }
-            composable(Routes.HISTORY) { HistoryScreen() }
+            composable(Routes.HISTORY) {
+                HistoryScreen(onOpenVerification = { navController.navigate(Routes.VERIFICATION) })
+            }
+            composable(Routes.BUSINESS) { BusinessScreen() }
             composable(Routes.PROFILE) {
-                ProfileScreen(onOpenDebug = { navController.navigate(Routes.UNPARSED) })
+                ProfileScreen(
+                    onOpenDebug = { navController.navigate(Routes.UNPARSED) },
+                    onOpenPricing = { navController.navigate(Routes.PRICING) }
+                )
+            }
+            composable(Routes.VERIFICATION) {
+                VerificationScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.PRICING) {
+                PricingScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.UNPARSED) {
                 UnparsedNotificationsScreen(onBack = { navController.popBackStack() })

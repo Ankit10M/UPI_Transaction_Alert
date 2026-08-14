@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.upivoicealert.domain.model.VoiceLanguage
@@ -31,6 +32,13 @@ class SettingsDataStore @Inject constructor(
         val MOBILE_NUMBER = stringPreferencesKey("mobile_number")
         val USER_NAME = stringPreferencesKey("user_name")
 
+        // Merchant account (Feature 5): local user id + creation time are
+        // generated once on first profile save and kept stable (future Firebase
+        // OTP would replace the local id with the Firebase UID).
+        val USER_ID = stringPreferencesKey("user_id")
+        val USER_CREATED_AT = longPreferencesKey("user_created_at")
+        val SHOP_NAME = stringPreferencesKey("shop_name")
+
         /**
          * Master switch for the voice-alert service. When false the listener
          * service stops processing notifications entirely (the big START/STOP
@@ -52,6 +60,9 @@ class SettingsDataStore @Inject constructor(
     val ttsFallbackOccurred: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.TTS_FALLBACK] ?: false }
     val mobileNumber: Flow<String> = context.settingsDataStore.data.map { it[Keys.MOBILE_NUMBER] ?: "" }
     val userName: Flow<String> = context.settingsDataStore.data.map { it[Keys.USER_NAME] ?: "" }
+    val userId: Flow<String> = context.settingsDataStore.data.map { it[Keys.USER_ID] ?: "" }
+    val userCreatedAt: Flow<Long> = context.settingsDataStore.data.map { it[Keys.USER_CREATED_AT] ?: 0L }
+    val shopName: Flow<String> = context.settingsDataStore.data.map { it[Keys.SHOP_NAME] ?: "" }
     val monitoringEnabled: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.MONITORING_ENABLED] ?: false }
 
     suspend fun setVoiceEnabled(enabled: Boolean) {
@@ -84,6 +95,18 @@ class SettingsDataStore @Inject constructor(
 
     suspend fun setUserName(name: String) {
         context.settingsDataStore.edit { it[Keys.USER_NAME] = name }
+    }
+
+    suspend fun setUserId(id: String) {
+        context.settingsDataStore.edit { it[Keys.USER_ID] = id }
+    }
+
+    suspend fun setUserCreatedAt(createdAt: Long) {
+        context.settingsDataStore.edit { it[Keys.USER_CREATED_AT] = createdAt }
+    }
+
+    suspend fun setShopName(shopName: String) {
+        context.settingsDataStore.edit { it[Keys.SHOP_NAME] = shopName }
     }
 
     suspend fun setMonitoringEnabled(enabled: Boolean) {

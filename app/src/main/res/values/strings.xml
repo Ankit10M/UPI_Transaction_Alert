@@ -111,4 +111,58 @@
 
     <string name="debug_title">Unparsed notifications</string>
     <string name="debug_empty">No unparsed notifications.</string>
+
+    <!-- Navigation -->
+    <string name="back">Back</string>
+    <string name="business_title">Business</string>
+
+    <!-- Home: payment verification entry -->
+    <string name="home_verify_payment">Verify a payment</string>
+
+    <!-- History: verify entry -->
+    <string name="history_verify">Verify</string>
+
+    <!-- Feature 1: Payment verification -->
+    <string name="verification_title">Verify Payment</string>
+    <string name="verification_subtitle">Enter the amount you expect to receive and check whether the payment has arrived in the last 10 minutes.</string>
+    <string name="verification_amount_hint">Expected amount</string>
+    <string name="verification_amount_invalid">Please enter a valid amount greater than zero.</string>
+    <string name="verification_check">Check Payment</string>
+    <string name="verification_success_title">Payment Verified</string>
+    <string name="verification_not_found_title">Payment not found</string>
+    <string name="verification_not_found_body">Please wait for confirmation. If the customer has paid, it may still be processing.</string>
+    <string name="verification_amount_label">Amount</string>
+    <string name="verification_sender_label">Sender</string>
+    <string name="verification_app_label">UPI app</string>
+    <string name="verification_time_label">Time</string>
+
+    <!-- Feature 2: Business summary -->
+    <string name="business_empty_title">No sales yet today</string>
+    <string name="business_empty_body">Your daily collection, average payment and peak hour will appear here once payments start coming in.</string>
+    <string name="business_today_collection">Today\'s Collection</string>
+    <string name="business_payments">Payments</string>
+    <string name="business_average">Average</string>
+    <string name="business_largest">Largest</string>
+    <string name="business_peak_hour">Peak hour</string>
+    <string name="business_footer">Calculated from your confirmed received payments today.</string>
+
+    <!-- Feature 3: Pricing / subscription -->
+    <string name="pricing_title">Pricing</string>
+    <string name="pricing_subtitle">Simple plans for your shop. All plans include instant voice alerts.</string>
+    <string name="pricing_choose_plan">Choose your plan</string>
+    <string name="pricing_current_plan">Current Plan</string>
+    <string name="pricing_duration">per %1$s</string>
+    <string name="pricing_free">Free</string>
+    <string name="pricing_upgrade">Upgrade</string>
+    <string name="pricing_current_badge">Current plan</string>
+    <string name="pricing_upgrade_title">Upgrade to %1$s</string>
+    <string name="pricing_upgrade_body">Online payments are coming soon. We are integrating Razorpay for secure in-app upgrades — you will be able to complete this upgrade from this screen shortly.</string>
+
+    <!-- Feature 4/5: Profile -->
+    <string name="profile_shop_hint">Shop name</string>
+    <string name="profile_test_voice">Test Voice</string>
+    <string name="profile_subscription">Subscription</string>
+    <string name="profile_upgrade">Upgrade</string>
+    <string name="about_shoutpay">About ShoutPay</string>
+    <string name="about_body">ShoutPay v%1$s\n\nA merchant payment assistant — hear every UPI payment the moment it arrives, verify payments instantly, and track your daily collections. Fully offline, your data never leaves your device.</string>
 </resources>

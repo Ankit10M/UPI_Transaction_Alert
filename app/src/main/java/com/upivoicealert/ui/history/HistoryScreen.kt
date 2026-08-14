@@ -3,19 +3,26 @@ package com.upivoicealert.ui.history
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -37,7 +44,10 @@ import com.upivoicealert.ui.components.TransactionCard
 import com.upivoicealert.utils.DateTimeUtils
 
 @Composable
-fun HistoryScreen(viewModel: HistoryViewModel = hiltViewModel()) {
+fun HistoryScreen(
+    onOpenVerification: () -> Unit,
+    viewModel: HistoryViewModel = hiltViewModel()
+) {
     val transactions by viewModel.transactions.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val appFilter by viewModel.appFilter.collectAsStateWithLifecycle()
@@ -47,11 +57,29 @@ fun HistoryScreen(viewModel: HistoryViewModel = hiltViewModel()) {
     Column(modifier = Modifier.fillMaxSize()) {
         // ─── Search + filters ──────────────────────────────────────────────
         Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
-            Text(
-                text = stringResource(R.string.history_title),
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 14.dp)
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.history_title),
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedButton(
+                    onClick = onOpenVerification,
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.FactCheck,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.history_verify),
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(start = 6.dp)
+                    )
+                }
+            }
+            Spacer(Modifier.height(14.dp))
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = viewModel::onSearchQueryChange,

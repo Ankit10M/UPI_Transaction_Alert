@@ -36,6 +36,7 @@ import com.upivoicealert.ui.theme.ShoutPayIndigoDark
 @Composable
 fun ProfileInfoCard(
     name: String,
+    shopName: String,
     phone: String,
     onEdit: () -> Unit,
     modifier: Modifier = Modifier
@@ -78,6 +79,16 @@ fun ProfileInfoCard(
                     style = MaterialTheme.typography.titleLarge,
                     maxLines = 1
                 )
+                if (shopName.isNotBlank()) {
+                    Text(
+                        text = shopName,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
                 Text(
                     text = phone.ifBlank { stringResource(R.string.profile_phone_missing) },
                     style = MaterialTheme.typography.bodyLarge,

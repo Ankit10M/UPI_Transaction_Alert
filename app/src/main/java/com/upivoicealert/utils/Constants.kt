@@ -5,6 +5,9 @@ object Constants {
     /** Deduplication fuzzy-match window (CLAUDE.md Module 4): 2 minutes. */
     const val DEDUP_WINDOW_MS = 2 * 60 * 1000L
 
+    /** Payment-verification window (Feature 1): merchant checks the last 10 minutes. */
+    const val VERIFICATION_WINDOW_MS = 10 * 60 * 1000L
+
     /** Retention for the failed-parse diagnostic queue. */
     const val UNPARSED_RETENTION_DAYS = 30L
 

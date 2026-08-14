@@ -26,6 +26,9 @@ class TransactionRepositoryImpl @Inject constructor(
     override fun observeReceivedSuccess(): Flow<List<Transaction>> =
         transactionDao.observeReceivedSuccess().map { list -> list.map { it.toDomain() } }
 
+    override fun observeReceivedSuccessSince(since: Long): Flow<List<Transaction>> =
+        transactionDao.observeReceivedSuccessSince(since).map { list -> list.map { it.toDomain() } }
+
     override fun observeLatest(): Flow<Transaction?> =
         transactionDao.observeLatest().map { it?.toDomain() }
 

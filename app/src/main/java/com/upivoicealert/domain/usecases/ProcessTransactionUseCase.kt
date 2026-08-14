@@ -2,11 +2,13 @@ package com.upivoicealert.domain.usecases
 
 import android.util.Log
 import com.upivoicealert.domain.model.NotificationSource
+import com.upivoicealert.domain.model.ServiceStatus
 import com.upivoicealert.domain.model.Transaction
 import com.upivoicealert.domain.model.TransactionStatus
 import com.upivoicealert.domain.model.TransactionType
 import com.upivoicealert.domain.model.UnparsedNotification
 import com.upivoicealert.domain.model.VoiceLanguage
+import com.upivoicealert.domain.repository.ServiceStateRepository
 import com.upivoicealert.domain.repository.SettingsRepository
 import com.upivoicealert.domain.repository.TransactionRepository
 import com.upivoicealert.filter.NotificationFilter
@@ -44,6 +46,7 @@ class ProcessTransactionUseCase @Inject constructor(
     private val resolver: ParserVersionResolver,
     private val validator: TransactionValidator,
     private val transactionRepository: TransactionRepository,
+    private val serviceStateRepository: ServiceStateRepository,
     private val settingsRepository: SettingsRepository,
     private val announcementTemplates: AnnouncementTemplates,
     private val voiceEngine: VoiceAnnouncementEngine
@@ -57,9 +60,10 @@ class ProcessTransactionUseCase @Inject constructor(
     ): ProcessingResult {
         Log.i(TAG, "PROCESS_START package=$packageName postTime=$postTime rawText=$rawText")
 
-        // Master service switch (Home screen START/STOP): when monitoring is
-        // disabled nothing enters the pipeline — no save, no announcement.
-        if (!settingsRepository.isMonitoringEnabled()) {
+        // Master service switch (Home screen START/STOP): when the service is
+        // stopped nothing enters the pipeline — no save, no announcement. The
+        // NotificationListenerService itself stays connected to the system.
+        if (serviceStateRepository.getStatus() != ServiceStatus.SERVICE_RUNNING) {
             Log.i(TAG, "MONITORING_DISABLED package=$packageName (service stopped by user)")
             return ProcessingResult.IGNORED
         }

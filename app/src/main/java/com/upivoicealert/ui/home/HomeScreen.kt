@@ -9,11 +9,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -48,6 +51,7 @@ import com.upivoicealert.ui.components.TransactionCard
 @Composable
 fun HomeScreen(
     onOpenHistory: () -> Unit,
+    onOpenVerification: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -130,6 +134,27 @@ fun HomeScreen(
             EmptyStateView(
                 title = stringResource(R.string.home_recent_empty),
                 icon = Icons.Filled.NotificationsNone
+            )
+        }
+        Spacer(Modifier.height(16.dp))
+
+        // ─── Payment verification entry (Feature 1) ───────────────────────
+        OutlinedButton(
+            onClick = onOpenVerification,
+            shape = MaterialTheme.shapes.small,
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 56.dp)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.FactCheck,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = stringResource(R.string.home_verify_payment),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(start = 10.dp)
             )
         }
         Spacer(Modifier.height(32.dp))

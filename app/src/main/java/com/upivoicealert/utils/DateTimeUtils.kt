@@ -16,6 +16,14 @@ object DateTimeUtils {
 
     fun formatDateTime(epochMillis: Long): String = dateTimeFormatter.format(Date(epochMillis))
 
+    /** Hour of day (0..23) for a timestamp — used for the business peak-hour metric. */
+    fun hourOfDay(epochMillis: Long): Int =
+        Calendar.getInstance().apply { timeInMillis = epochMillis }.get(Calendar.HOUR_OF_DAY)
+
+    /** "6 PM" style label for a 0..23 hour value. */
+    fun formatHour(hourOfDay: Int): String =
+        SimpleDateFormat("h a", Locale.getDefault()).format(Date(hourOfDay * 3_600_000L))
+
     fun formatCurrency(amount: Double): String = "\u20B9" + currencyFormatter.format(amount)
 
     /**

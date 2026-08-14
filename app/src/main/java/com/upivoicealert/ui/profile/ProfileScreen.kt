@@ -15,16 +15,19 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.RecordVoiceOver
+import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -45,31 +48,37 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.upivoicealert.R
+import com.upivoicealert.domain.model.SubscriptionStatus
 import com.upivoicealert.domain.model.VoiceLanguage
 import com.upivoicealert.ui.components.PermissionSettingCard
 import com.upivoicealert.ui.components.ProfileInfoCard
 import com.upivoicealert.ui.components.SettingCard
+import com.upivoicealert.ui.components.ShoutPayButton
 import com.upivoicealert.ui.components.ToggleSettingCard
+import com.upivoicealert.ui.theme.ShoutPayIndigo
 import com.upivoicealert.ui.theme.SuccessGreen
 import com.upivoicealert.utils.PackageNames
 
 @Composable
 fun ProfileScreen(
     onOpenDebug: () -> Unit,
+    onOpenPricing: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val voiceEnabled by viewModel.voiceEnabled.collectAsStateWithLifecycle()
     val language by viewModel.language.collectAsStateWithLifecycle()
     val speechRate by viewModel.speechRate.collectAsStateWithLifecycle()
     val ttsFallbackOccurred by viewModel.ttsFallbackOccurred.collectAsStateWithLifecycle()
+    val user by viewModel.user.collectAsStateWithLifecycle()
     val mobileNumber by viewModel.mobileNumber.collectAsStateWithLifecycle()
-    val userName by viewModel.userName.collectAsStateWithLifecycle()
+    val subscription by viewModel.subscription.collectAsStateWithLifecycle()
     val listenerGranted by viewModel.listenerGranted.collectAsStateWithLifecycle()
     val batteryIgnored by viewModel.batteryIgnored.collectAsStateWithLifecycle()
     val debugMode by viewModel.debugMode.collectAsStateWithLifecycle()
 
     var showEditProfile by remember { mutableStateOf(false) }
     var showPrivacy by remember { mutableStateOf(false) }
+    var showAbout by remember { mutableStateOf(false) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -95,10 +104,11 @@ fun ProfileScreen(
         )
         Spacer(Modifier.height(16.dp))
 
-        // ─── Profile information ───────────────────────────────────────────
+        // ─── Profile information (name / shop name / phone) ───────────────
         ProfileInfoCard(
-            name = userName,
-            phone = mobileNumber,
+            name = user?.name.orEmpty().ifBlank { viewModel.userName.value },
+            shopName = user?.shopName.orEmpty(),
+            phone = user?.phoneNumber.orEmpty().ifBlank { mobileNumber },
             onEdit = { showEditProfile = true }
         )
         Spacer(Modifier.height(20.dp))
@@ -113,7 +123,7 @@ fun ProfileScreen(
         )
         Spacer(Modifier.height(14.dp))
 
-        // ─── Voice assistant detail (language + speed) ────────────────────
+        // ─── Voice assistant detail (language + speed + test voice) ───────
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
@@ -159,11 +169,27 @@ fun ProfileScreen(
                     valueRange = 0.5f..2.0f,
                     steps = 14
                 )
+                OutlinedButton(
+                    onClick = viewModel::testVoice,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.RecordVoiceOver,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.profile_test_voice),
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
             }
         }
         Spacer(Modifier.height(14.dp))
 
-        // ─── Permissions (real status, opens system settings) ─────────────
+        // ─── Service settings (real Android permission states) ────────────
         PermissionSettingCard(
             icon = Icons.Filled.NotificationsActive,
             title = stringResource(R.string.permission_notification_access),
@@ -186,6 +212,57 @@ fun ProfileScreen(
             onAction = viewModel::requestBatteryExemption
         )
         Spacer(Modifier.height(20.dp))
+
+        // ─── Subscription (current plan + upgrade) ────────────────────────
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        ) {
+            Column(Modifier.padding(20.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Filled.WorkspacePremium,
+                        contentDescription = null,
+                        tint = ShoutPayIndigo,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.profile_subscription),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(start = 12.dp)
+                    )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 14.dp)
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = subscription.plan.name,
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Text(
+                            text = subscription.status.statusLabel(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (subscription.status == SubscriptionStatus.FREE_TRIAL) SuccessGreen
+                            else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    OutlinedButton(
+                        onClick = onOpenPricing,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.profile_upgrade),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(14.dp))
 
         // ─── Connected apps ────────────────────────────────────────────────
         Text(
@@ -214,11 +291,18 @@ fun ProfileScreen(
         }
         Spacer(Modifier.height(14.dp))
 
-        // ─── Terms & Privacy ───────────────────────────────────────────────
+        // ─── Legal ─────────────────────────────────────────────────────────
         SettingCard(
             icon = Icons.Filled.PrivacyTip,
             title = stringResource(R.string.privacy_note_title),
             onClick = { showPrivacy = true }
+        )
+        Spacer(Modifier.height(14.dp))
+        SettingCard(
+            icon = Icons.Filled.Info,
+            title = stringResource(R.string.about_shoutpay),
+            description = viewModel.appVersion,
+            onClick = { showAbout = true }
         )
         Spacer(Modifier.height(14.dp))
 
@@ -243,12 +327,12 @@ fun ProfileScreen(
 
     if (showEditProfile) {
         EditProfileDialog(
-            name = userName,
-            phone = mobileNumber,
+            name = user?.name.orEmpty().ifBlank { viewModel.userName.value },
+            shopName = user?.shopName.orEmpty(),
+            phone = user?.phoneNumber.orEmpty().ifBlank { mobileNumber },
             onDismiss = { showEditProfile = false },
-            onSave = { newName, newPhone ->
-                viewModel.setUserName(newName)
-                viewModel.setMobileNumber(newPhone)
+            onSave = { newName, newShop, newPhone ->
+                viewModel.saveProfile(newName, newShop, newPhone)
                 showEditProfile = false
             }
         )
@@ -261,6 +345,17 @@ fun ProfileScreen(
             text = { Text(stringResource(R.string.privacy_body)) },
             confirmButton = {
                 TextButton(onClick = { showPrivacy = false }) { Text(stringResource(R.string.ok)) }
+            }
+        )
+    }
+
+    if (showAbout) {
+        AlertDialog(
+            onDismissRequest = { showAbout = false },
+            title = { Text(stringResource(R.string.about_shoutpay)) },
+            text = { Text(stringResource(R.string.about_body, viewModel.appVersion)) },
+            confirmButton = {
+                TextButton(onClick = { showAbout = false }) { Text(stringResource(R.string.ok)) }
             }
         )
     }
@@ -291,11 +386,13 @@ private fun ConnectedAppRow(name: String) {
 @Composable
 private fun EditProfileDialog(
     name: String,
+    shopName: String,
     phone: String,
     onDismiss: () -> Unit,
-    onSave: (String, String) -> Unit
+    onSave: (String, String, String) -> Unit
 ) {
     var nameValue by remember { mutableStateOf(name) }
+    var shopValue by remember { mutableStateOf(shopName) }
     var phoneValue by remember { mutableStateOf(phone) }
     var nameError by remember { mutableStateOf(false) }
 
@@ -319,6 +416,13 @@ private fun EditProfileDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
+                    value = shopValue,
+                    onValueChange = { shopValue = it },
+                    label = { Text(stringResource(R.string.profile_shop_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
                     value = phoneValue,
                     onValueChange = { phoneValue = it.filter { c -> c.isDigit() }.take(10) },
                     label = { Text(stringResource(R.string.profile_phone_hint)) },
@@ -330,7 +434,7 @@ private fun EditProfileDialog(
         confirmButton = {
             TextButton(onClick = {
                 if (nameValue.isBlank()) nameError = true
-                else onSave(nameValue.trim(), phoneValue.trim())
+                else onSave(nameValue.trim(), shopValue.trim(), phoneValue.trim())
             }) {
                 Text(stringResource(R.string.profile_save))
             }
@@ -347,4 +451,10 @@ private fun VoiceLanguage.displayName(): String = when (this) {
     VoiceLanguage.ENGLISH -> "English"
     VoiceLanguage.HINDI -> "Hindi"
     VoiceLanguage.MARATHI -> "Marathi"
+}
+
+private fun SubscriptionStatus.statusLabel(): String = when (this) {
+    SubscriptionStatus.FREE_TRIAL -> "Free Trial"
+    SubscriptionStatus.ACTIVE -> "Active"
+    SubscriptionStatus.EXPIRED -> "Expired"
 }

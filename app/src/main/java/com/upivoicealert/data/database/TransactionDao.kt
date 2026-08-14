@@ -15,6 +15,14 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE transactionType = 'RECEIVED' AND status = 'SUCCESS' ORDER BY createdAt DESC")
     fun observeReceivedSuccess(): Flow<List<TransactionEntity>>
 
+    /** Received + success transactions posted at/after [since] (business summary). */
+    @Query("SELECT * FROM transactions WHERE transactionType = 'RECEIVED' AND status = 'SUCCESS' AND createdAt >= :since ORDER BY createdAt DESC")
+    fun observeReceivedSuccessSince(since: Long): Flow<List<TransactionEntity>>
+
+    /** Most recent received + success transaction matching [amount] at/after [since] (payment verification). */
+    @Query("SELECT * FROM transactions WHERE transactionType = 'RECEIVED' AND status = 'SUCCESS' AND amount = :amount AND createdAt >= :since ORDER BY createdAt DESC LIMIT 1")
+    suspend fun findRecentReceivedSuccess(amount: Double, since: Long): TransactionEntity?
+
     @Query("SELECT * FROM transactions ORDER BY createdAt DESC LIMIT 1")
     fun observeLatest(): Flow<TransactionEntity?>
 

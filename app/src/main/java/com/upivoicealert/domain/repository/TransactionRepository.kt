@@ -10,6 +10,9 @@ interface TransactionRepository {
 
     fun observeReceivedSuccess(): Flow<List<Transaction>>
 
+    /** Received + success transactions posted at/after [since] (business summary). */
+    fun observeReceivedSuccessSince(since: Long): Flow<List<Transaction>>
+
     fun observeCount(): Flow<Int>
 
     fun observeCountSince(since: Long): Flow<Int>
