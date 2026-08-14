@@ -157,14 +157,14 @@ class ProcessTransactionUseCase @Inject constructor(
         // the stored voiceAnnounced flag is accurate (schema v3). TTS failure must
         // never block the save pipeline (CLAUDE.md Section 8), so the flag records
         // the announcement decision, and the actual speak() is best-effort.
+        //
+        // BUGFIX (D.5): the mobile number is profile metadata only — it is NOT a
+        // notification-text filter. UPI "received" notifications carry the sender's
+        // name, never the receiver's own number, so gating announcements on the
+        // configured number silently disabled voice for every user who added one.
+        // Announce whenever voice is enabled.
         val shouldAnnounce = runCatching { settingsRepository.isVoiceEnabled() }.getOrDefault(false)
-        val transactionWithVoice = if (shouldAnnounce) {
-            val configuredMobile = runCatching { settingsRepository.getMobileNumber() }.getOrDefault("")
-            val mobileMatches = configuredMobile.isBlank() || transaction.rawNotification.contains(configuredMobile)
-            transaction.copy(voiceAnnounced = mobileMatches)
-        } else {
-            transaction.copy(voiceAnnounced = false)
-        }
+        val transactionWithVoice = transaction.copy(voiceAnnounced = shouldAnnounce)
 
         val inserted = transactionRepository.insertTransactionIfNotDuplicate(transactionWithVoice)
         if (!inserted) {
@@ -189,14 +189,14 @@ class ProcessTransactionUseCase @Inject constructor(
                 Log.w(TAG, "Voice announcement failed (transaction already saved)", e)
             }
         } else {
-            Log.d(TAG, "Skipping announcement: voice disabled or mobile number mismatch")
+            Log.d(TAG, "Skipping announcement: voice disabled")
         }
 
         return ProcessingResult.SAVED
     }
 
     private companion object {
-        const val TAG = "UPI_DEBUG"
-        const val DUP_TAG = "UPI_DUPLICATE_DEBUG"
+        const val TAG = "SHOUTPAY_NOTIFICATION_DEBUG"
+        const val DUP_TAG = "SHOUTPAY_NOTIFICATION_DEBUG"
     }
 }

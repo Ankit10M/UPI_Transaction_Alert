@@ -65,7 +65,7 @@ class NotificationFilter @Inject constructor(
     }
 
     private companion object {
-        const val TAG = "UPI_DEBUG"
+        const val TAG = "SHOUTPAY_NOTIFICATION_DEBUG"
 
         /**
          * "rs" is matched only when adjacent to digits (e.g. "Rs. 500", "500 rs",

@@ -139,6 +139,6 @@ class VoiceAnnouncementEngine @Inject constructor(
     }
 
     private companion object {
-        const val TAG = "UPI_TTS_DEBUG"
+        const val TAG = "SHOUTPAY_TTS_DEBUG"
     }
 }

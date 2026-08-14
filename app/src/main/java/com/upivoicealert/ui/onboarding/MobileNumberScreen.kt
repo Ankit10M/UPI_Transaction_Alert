@@ -1,9 +1,10 @@
 package com.upivoicealert.ui.onboarding
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +29,10 @@ import com.upivoicealert.ui.components.ShoutPayButton
 import com.upivoicealert.ui.profile.ProfileViewModel
 import kotlinx.coroutines.launch
 
+/**
+ * Mobile-number step of onboarding. The number is saved as profile metadata —
+ * it does NOT gate announcements (voice announces every received payment).
+ */
 @Composable
 fun MobileNumberScreen(
     onContinue: () -> Unit,
@@ -41,7 +46,7 @@ fun MobileNumberScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -77,5 +82,6 @@ fun MobileNumberScreen(
                 .fillMaxWidth()
                 .padding(top = 32.dp)
         )
+        Spacer(Modifier.height(32.dp))
     }
 }

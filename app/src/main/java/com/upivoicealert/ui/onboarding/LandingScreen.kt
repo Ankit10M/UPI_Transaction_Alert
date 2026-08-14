@@ -43,7 +43,7 @@ import com.upivoicealert.ui.theme.SuccessGreenLight
 
 /**
  * ShoutPay landing page — hero message, trust indicators and the primary
- * "Start Using ShoutPay" CTA. This is the first screen of onboarding.
+ * "Start Using ShoutPay" CTA. First screen of onboarding (app_design).
  */
 @Composable
 fun LandingScreen(onStart: () -> Unit) {
@@ -88,20 +88,11 @@ fun LandingScreen(onStart: () -> Unit) {
         Spacer(Modifier.height(32.dp))
 
         // ─── Trust indicators ──────────────────────────────────────────────
-        TrustIndicator(
-            icon = Icons.Filled.PhoneAndroid,
-            text = stringResource(R.string.landing_trust_1)
-        )
+        TrustIndicator(icon = Icons.Filled.PhoneAndroid, text = stringResource(R.string.landing_trust_1))
         Spacer(Modifier.height(14.dp))
-        TrustIndicator(
-            icon = Icons.Filled.Bolt,
-            text = stringResource(R.string.landing_trust_2)
-        )
+        TrustIndicator(icon = Icons.Filled.Bolt, text = stringResource(R.string.landing_trust_2))
         Spacer(Modifier.height(14.dp))
-        TrustIndicator(
-            icon = Icons.Filled.CloudOff,
-            text = stringResource(R.string.landing_trust_3)
-        )
+        TrustIndicator(icon = Icons.Filled.CloudOff, text = stringResource(R.string.landing_trust_3))
         Spacer(Modifier.height(40.dp))
     }
 }
@@ -154,14 +145,10 @@ private fun HeroIllustration() {
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Outer ring
         Box(
             modifier = Modifier
                 .size(150.dp)
-                .background(
-                    color = ShoutPayIndigo.copy(alpha = 0.10f),
-                    shape = CircleShape
-                )
+                .background(color = ShoutPayIndigo.copy(alpha = 0.10f), shape = CircleShape)
         )
         Box(
             modifier = Modifier

@@ -96,6 +96,6 @@ class UpiNotificationListenerService : NotificationListenerService() {
     }
 
     private companion object {
-        const val TAG = "UPI_DEBUG"
+        const val TAG = "SHOUTPAY_NOTIFICATION_DEBUG"
     }
 }

@@ -23,8 +23,8 @@ val PeachAccent = Color(0xFFE1A46E)
 val PeachContainer = Color(0xFFFFE9D6)
 val OnPeachContainer = Color(0xFF5A2E0A)
 
-/** Success green — received amounts, "announced" chips, listening state. */
-val SuccessGreen = Color(0xFF1E7D32)
+/** Success green — received amounts, "announced" chips, listening state (#006E1C from app_design). */
+val SuccessGreen = Color(0xFF006E1C)
 val SuccessGreenLight = Color(0xFFD7F5D9)
 val OnSuccessGreenLight = Color(0xFF0B3D16)
 
@@ -44,7 +44,7 @@ val AppBackgroundLight = Color(0xFFF8F9FA)
 val SurfaceLight = Color(0xFFFFFFFF)
 val SurfaceVariantLight = Color(0xFFEFF0F4)
 val OnSurfaceLight = Color(0xFF1D1E21)
-val OnSurfaceVariantLight = Color(0xFF6B7280)
+val OnSurfaceVariantLight = Color(0xFF9CA3AF)
 val OutlineLight = Color(0xFFE4E6E9)
 val OutlineStrongLight = Color(0xFFB9BEC9)
 val DividerLight = Color(0xFFECEDF1)

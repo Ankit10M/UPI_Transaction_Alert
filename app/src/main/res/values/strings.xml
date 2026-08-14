@@ -28,17 +28,17 @@
     <string name="permission_finish">Finish</string>
 
     <string name="mobile_number_title">Mobile Number</string>
-    <string name="mobile_number_desc">Enter your mobile number to filter announcements. Only payments referencing this number will be spoken. Leave blank to hear all payments.</string>
+    <string name="mobile_number_desc">Enter your mobile number so it shows on your profile. It is optional — ShoutPay announces every received payment.</string>
     <string name="mobile_number_hint">Mobile number (optional)</string>
 
     <!-- Home -->
     <string name="home_add_number">+ Add Number</string>
     <string name="home_add_number_title">Add your mobile number</string>
-    <string name="home_add_number_desc">Only payments that reference this number will be announced. Leave empty to announce every payment.</string>
+    <string name="home_add_number_desc">Enter your mobile number to save it to your profile. ShoutPay announces every received payment — this number is not used to filter announcements.</string>
     <string name="home_add_number_hint">10-digit mobile number</string>
     <string name="home_add_number_invalid">Please enter a valid 10-digit mobile number.</string>
     <string name="permission_status_connected">Connected</string>
-    <string name="permission_status_required">Permission Required</string>
+    <string name="permission_status_required">Required</string>
     <string name="permission_status_allowed">Allowed</string>
     <string name="permission_status_restricted">Optimization Enabled</string>
     <string name="home_voice_start">START</string>
@@ -48,7 +48,7 @@
     <string name="home_protection_title">ShoutPay Protection</string>
     <string name="home_protection_notification">Notification Access</string>
     <string name="home_protection_notification_ok">Connected</string>
-    <string name="home_protection_notification_missing">Not Connected</string>
+    <string name="home_protection_notification_missing">Required</string>
     <string name="home_protection_voice">Voice Assistant</string>
     <string name="home_protection_voice_ok">Ready</string>
     <string name="home_protection_voice_off">Disabled</string>
@@ -70,6 +70,7 @@
     <string name="history_not_announced">Not announced</string>
     <string name="history_replay">Replay Voice</string>
     <string name="history_empty">No payments yet</string>
+    <string name="unknown_sender">Unknown</string>
     <string name="history_empty_check">Make sure Notification Access is granted, then wait for your next UPI payment.</string>
 
     <string name="dashboard_title">Home</string>

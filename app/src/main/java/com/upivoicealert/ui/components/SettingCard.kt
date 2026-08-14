@@ -13,29 +13,31 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.upivoicealert.ui.theme.SuccessGreen
 import com.upivoicealert.ui.theme.ErrorRed
+import com.upivoicealert.ui.theme.OnIndigo
+import com.upivoicealert.ui.theme.ShoutPayIndigo
+import com.upivoicealert.ui.theme.SuccessGreen
 
 /**
- * Settings row card used across the Profile screen.
+ * Settings row card used across the Profile screen (app_design style):
  *
- * [SettingCard] - wraps a title + description with an optional trailing widget.
- * [ToggleSettingCard] - switch row.
- * [PermissionSettingCard] - permission status row with an "Open Settings" action
- *   (never a fake switch — Android special permissions can't be toggled).
+ * - [SettingCard] — icon + title/description + optional trailing widget/chevron.
+ * - [ToggleSettingCard] — switch row (voice announcements, debug mode).
+ * - [PermissionSettingCard] — real permission status + indigo "Open Settings"
+ *   action button (never a fake switch — special permissions can't be toggled).
  */
 @Composable
 fun SettingCard(
@@ -102,9 +104,7 @@ fun ToggleSettingCard(
         title = title,
         description = description,
         modifier = modifier,
-        trailing = {
-            Switch(checked = checked, onCheckedChange = onCheckedChange)
-        }
+        trailing = { Switch(checked = checked, onCheckedChange = onCheckedChange) }
     )
 }
 
@@ -126,28 +126,31 @@ fun PermissionSettingCard(
         description = description,
         modifier = modifier,
         trailing = {
-            if (granted) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = grantedLabel,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = SuccessGreen,
-                        modifier = Modifier.padding(end = 4.dp)
-                    )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = if (granted) grantedLabel else missingLabel,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (granted) SuccessGreen else ErrorRed
+                )
+                if (!granted) {
+                    Button(
+                        onClick = onAction,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = ShoutPayIndigo,
+                            contentColor = OnIndigo
+                        ),
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        Text(actionLabel, style = MaterialTheme.typography.labelMedium)
+                    }
+                } else {
                     Icon(
                         imageVector = Icons.Filled.CheckCircle,
                         contentDescription = null,
-                        tint = SuccessGreen
+                        tint = SuccessGreen,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
-                }
-            } else {
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = missingLabel,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = ErrorRed
-                    )
-                    TextButton(onClick = onAction) { Text(actionLabel) }
                 }
             }
         }

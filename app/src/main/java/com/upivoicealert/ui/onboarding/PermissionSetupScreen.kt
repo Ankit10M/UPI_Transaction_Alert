@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,7 +47,7 @@ fun PermissionSetupScreen(onFinish: () -> Unit) {
             }
         }
     }
-    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+    DisposableEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
@@ -107,7 +108,8 @@ private fun PermissionCard(
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    text = if (statusOk) "Granted" else "Not granted",
+                    text = if (statusOk) stringResource(R.string.permission_status_connected)
+                    else stringResource(R.string.permission_status_required),
                     style = MaterialTheme.typography.labelLarge,
                     color = if (statusOk) {
                         MaterialTheme.colorScheme.primary

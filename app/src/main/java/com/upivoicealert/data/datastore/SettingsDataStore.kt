@@ -34,7 +34,9 @@ class SettingsDataStore @Inject constructor(
         /**
          * Master switch for the voice-alert service. When false the listener
          * service stops processing notifications entirely (the big START/STOP
-         * control on the Home screen). Defaults to true.
+         * control on the Home screen). Defaults to FALSE so the merchant
+         * explicitly presses START to begin monitoring (saves battery until
+         * then, per the app_design flow).
          */
         val MONITORING_ENABLED = booleanPreferencesKey("monitoring_enabled")
     }
@@ -50,7 +52,7 @@ class SettingsDataStore @Inject constructor(
     val ttsFallbackOccurred: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.TTS_FALLBACK] ?: false }
     val mobileNumber: Flow<String> = context.settingsDataStore.data.map { it[Keys.MOBILE_NUMBER] ?: "" }
     val userName: Flow<String> = context.settingsDataStore.data.map { it[Keys.USER_NAME] ?: "" }
-    val monitoringEnabled: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.MONITORING_ENABLED] ?: true }
+    val monitoringEnabled: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.MONITORING_ENABLED] ?: false }
 
     suspend fun setVoiceEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { it[Keys.VOICE_ENABLED] = enabled }

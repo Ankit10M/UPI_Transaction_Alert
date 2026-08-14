@@ -34,6 +34,7 @@ class HistoryViewModel @Inject constructor(
     private val _appFilter = MutableStateFlow<String?>(null)
     val appFilter: StateFlow<String?> = _appFilter
 
+    /** Received + success transactions from Room, filtered by search/app. */
     val transactions: StateFlow<List<Transaction>> = combine(
         getTransactionHistoryUseCase.receivedSuccess(),
         _searchQuery,

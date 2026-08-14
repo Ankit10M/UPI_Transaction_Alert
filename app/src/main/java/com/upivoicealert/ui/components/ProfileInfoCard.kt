@@ -31,7 +31,7 @@ import com.upivoicealert.ui.theme.ShoutPayIndigoDark
 
 /**
  * Profile header card: avatar with initials, merchant name, phone number, and
- * an edit affordance (opens the name/phone edit dialog).
+ * an edit affordance (opens the name/phone edit dialog). Matches app_design.
  */
 @Composable
 fun ProfileInfoCard(
@@ -56,9 +56,7 @@ fun ProfileInfoCard(
                 modifier = Modifier
                     .size(64.dp)
                     .background(
-                        brush = Brush.linearGradient(
-                            listOf(ShoutPayIndigo, ShoutPayIndigoDark)
-                        ),
+                        brush = Brush.linearGradient(listOf(ShoutPayIndigo, ShoutPayIndigoDark)),
                         shape = CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -90,7 +88,7 @@ fun ProfileInfoCard(
             IconButton(onClick = onEdit) {
                 Icon(
                     imageVector = Icons.Filled.Edit,
-                    contentDescription = "Edit profile",
+                    contentDescription = stringResource(R.string.profile_edit),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }

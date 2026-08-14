@@ -36,25 +36,21 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.upivoicealert.R
+import com.upivoicealert.ui.components.ActivityCard
 import com.upivoicealert.ui.components.EmptyStateView
-import com.upivoicealert.ui.components.MerchantActivityCard
+import com.upivoicealert.ui.components.ProtectionCard
 import com.upivoicealert.ui.components.ProtectionDefaults
-import com.upivoicealert.ui.components.ServiceStatusCard
 import com.upivoicealert.ui.components.ShoutPayLogo
+import com.upivoicealert.ui.components.StartStopButton
 import com.upivoicealert.ui.components.TransactionCard
-import com.upivoicealert.ui.components.VoiceControlButton
 
 @Composable
 fun HomeScreen(
     onOpenHistory: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-    val monitoring by viewModel.monitoringEnabled.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val mobileNumber by viewModel.mobileNumber.collectAsStateWithLifecycle()
-    val latest by viewModel.latest.collectAsStateWithLifecycle()
-    val announcedToday by viewModel.announcedToday.collectAsStateWithLifecycle()
-    val missedToday by viewModel.missedToday.collectAsStateWithLifecycle()
-    val protection by viewModel.protectionStatus.collectAsStateWithLifecycle()
 
     var showAddNumber by remember { mutableStateOf(false) }
 
@@ -86,31 +82,34 @@ fun HomeScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            VoiceControlButton(
-                active = monitoring,
+            StartStopButton(
+                active = uiState.isServiceRunning,
                 label = stringResource(
-                    if (monitoring) R.string.home_voice_stop else R.string.home_voice_start
+                    if (uiState.isServiceRunning) R.string.home_voice_stop else R.string.home_voice_start
                 ),
                 subtitle = stringResource(
-                    if (monitoring) R.string.home_voice_on_subtitle else R.string.home_voice_off_subtitle
+                    if (uiState.isServiceRunning) R.string.home_voice_on_subtitle else R.string.home_voice_off_subtitle
                 ),
-                onClick = viewModel::toggleMonitoring
+                onClick = viewModel::toggleService
             )
         }
         Spacer(Modifier.height(28.dp))
 
         // ─── ShoutPay Protection status ────────────────────────────────────
-        ServiceStatusCard(
-            statuses = listOf(
-                ProtectionDefaults.notification(protection.notificationConnected),
-                ProtectionDefaults.voice(protection.voiceReady),
-                ProtectionDefaults.battery(protection.batteryAllowed)
+        ProtectionCard(
+            rows = listOf(
+                ProtectionDefaults.notification(uiState.notificationPermissionGranted),
+                ProtectionDefaults.voice(uiState.voiceEnabled),
+                ProtectionDefaults.battery(uiState.batteryPermissionGranted)
             )
         )
         Spacer(Modifier.height(16.dp))
 
-        // ─── Merchant confidence ───────────────────────────────────────────
-        MerchantActivityCard(announcedCount = announcedToday, missedCount = missedToday)
+        // ─── Today's activity ──────────────────────────────────────────────
+        ActivityCard(
+            announcedCount = uiState.todayTransactionCount,
+            missedCount = uiState.missedTodayCount
+        )
         Spacer(Modifier.height(16.dp))
 
         // ─── Recent payment ────────────────────────────────────────────────
@@ -119,9 +118,10 @@ fun HomeScreen(
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(bottom = 10.dp)
         )
+        val latest = uiState.latestTransaction
         if (latest != null) {
             TransactionCard(
-                transaction = latest!!,
+                transaction = latest,
                 onClick = onOpenHistory,
                 chipLabel = stringResource(R.string.home_recent_voice_played)
             )
@@ -177,7 +177,7 @@ fun AddNumberDialog(
     val invalidMessage = stringResource(R.string.home_add_number_invalid)
 
     fun isValid(): Boolean {
-        if (value.isBlank()) return true // blank = announce all payments
+        if (value.isBlank()) return true // blank = profile info only; all payments announced
         return value.filter { it.isDigit() }.length == 10
     }
 

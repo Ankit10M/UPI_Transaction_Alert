@@ -1,7 +1,6 @@
 package com.upivoicealert.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,8 +30,8 @@ import com.upivoicealert.ui.theme.SuccessGreen
 import com.upivoicealert.ui.theme.SuccessGreenLight
 import com.upivoicealert.ui.theme.SurfaceVariantLight
 
-/** Data holder for one protection row (icon, title, ok/missing status). */
-data class ProtectionStatus(
+/** One row of the ShoutPay Protection card. */
+data class ProtectionRow(
     val icon: ImageVector,
     val title: String,
     val ok: Boolean,
@@ -41,12 +40,13 @@ data class ProtectionStatus(
 )
 
 /**
- * "ShoutPay Protection" card — real Android permission states (notification
- * access, voice assistant readiness, battery optimization) rendered as rows.
+ * "ShoutPay Protection" card — real Android permission/readiness states
+ * (notification access, voice assistant, battery optimization) rendered as
+ * rows with a status dot and label. Matches the app_design home page.
  */
 @Composable
-fun ServiceStatusCard(
-    statuses: List<ProtectionStatus>,
+fun ProtectionCard(
+    rows: List<ProtectionRow>,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -62,21 +62,21 @@ fun ServiceStatusCard(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
-            statuses.forEachIndexed { index, status ->
+            rows.forEachIndexed { index, row ->
                 if (index > 0) {
                     HorizontalDivider(
                         modifier = Modifier.padding(horizontal = 16.dp),
                         color = MaterialTheme.colorScheme.outlineVariant
                     )
                 }
-                ProtectionRow(status)
+                ProtectionRowItem(row)
             }
         }
     }
 }
 
 @Composable
-private fun ProtectionRow(status: ProtectionStatus) {
+private fun ProtectionRowItem(row: ProtectionRow) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -87,20 +87,20 @@ private fun ProtectionRow(status: ProtectionStatus) {
             modifier = Modifier
                 .size(36.dp)
                 .background(
-                    color = if (status.ok) SuccessGreenLight else SurfaceVariantLight,
+                    color = if (row.ok) SuccessGreenLight else SurfaceVariantLight,
                     shape = CircleShape
                 ),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = status.icon,
+                imageVector = row.icon,
                 contentDescription = null,
-                tint = if (status.ok) SuccessGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (row.ok) SuccessGreen else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp)
             )
         }
         Text(
-            text = status.title,
+            text = row.title,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier
                 .weight(1f)
@@ -111,45 +111,45 @@ private fun ProtectionRow(status: ProtectionStatus) {
                 modifier = Modifier
                     .size(8.dp)
                     .background(
-                        color = if (status.ok) SuccessGreen else ErrorRed,
+                        color = if (row.ok) SuccessGreen else ErrorRed,
                         shape = CircleShape
                     )
             )
             Text(
-                text = if (status.ok) status.okLabel else status.missingLabel,
+                text = if (row.ok) row.okLabel else row.missingLabel,
                 style = MaterialTheme.typography.labelMedium,
-                color = if (status.ok) SuccessGreen else ErrorRed,
+                color = if (row.ok) SuccessGreen else ErrorRed,
                 modifier = Modifier.padding(start = 6.dp)
             )
         }
     }
 }
 
-/** Convenience builders so callers don't need to spell out the icon list. */
+/** Convenience builders matching the app_design labels. */
 object ProtectionDefaults {
     @Composable
-    fun notification(statusOk: Boolean): ProtectionStatus = ProtectionStatus(
+    fun notification(ok: Boolean): ProtectionRow = ProtectionRow(
         icon = Icons.Filled.NotificationsActive,
         title = stringResource(R.string.home_protection_notification),
-        ok = statusOk,
+        ok = ok,
         okLabel = stringResource(R.string.home_protection_notification_ok),
         missingLabel = stringResource(R.string.home_protection_notification_missing)
     )
 
     @Composable
-    fun voice(statusOk: Boolean): ProtectionStatus = ProtectionStatus(
+    fun voice(ok: Boolean): ProtectionRow = ProtectionRow(
         icon = Icons.Filled.RecordVoiceOver,
         title = stringResource(R.string.home_protection_voice),
-        ok = statusOk,
+        ok = ok,
         okLabel = stringResource(R.string.home_protection_voice_ok),
         missingLabel = stringResource(R.string.home_protection_voice_off)
     )
 
     @Composable
-    fun battery(statusOk: Boolean): ProtectionStatus = ProtectionStatus(
+    fun battery(ok: Boolean): ProtectionRow = ProtectionRow(
         icon = Icons.Filled.BatteryFull,
         title = stringResource(R.string.home_protection_battery),
-        ok = statusOk,
+        ok = ok,
         okLabel = stringResource(R.string.home_protection_battery_ok),
         missingLabel = stringResource(R.string.home_protection_battery_restricted)
     )

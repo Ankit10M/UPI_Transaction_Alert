@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.upivoicealert.domain.model.Transaction
 import com.upivoicealert.domain.repository.SettingsRepository
 import com.upivoicealert.domain.repository.TransactionRepository
+import com.upivoicealert.service.ServiceController
 import com.upivoicealert.utils.BatteryOptimizationHelper
 import com.upivoicealert.utils.DateTimeUtils
 import com.upivoicealert.utils.NotificationAccessHelper
@@ -19,59 +20,77 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+/**
+ * Home screen state holder.
+ *
+ * The UI only controls and observes the service flow through
+ * [ServiceController] — it never writes pipeline state directly. Permission
+ * states are real Android states (re-read on every resume), and the activity
+ * numbers come from the Room database flows.
+ */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val serviceController: ServiceController,
     private val settingsRepository: SettingsRepository,
     transactionRepository: TransactionRepository
 ) : ViewModel() {
 
     private val startOfToday = DateTimeUtils.startOfToday()
 
-    /** Master voice-service switch (the big START/STOP control). */
-    val monitoringEnabled: StateFlow<Boolean> = settingsRepository.monitoringEnabled
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+    private val _notificationGranted = MutableStateFlow(NotificationAccessHelper.isGranted(context))
+    private val _batteryIgnored = MutableStateFlow(BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context))
 
-    /** Voice announcement preference (Profile toggle). */
-    val voiceEnabled: StateFlow<Boolean> = settingsRepository.voiceEnabled
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+    /** Latest received payment from Room (null = empty state). */
+    private val latest: StateFlow<Transaction?> = transactionRepository.observeLatest()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** Payments announced today (received-success count since midnight). */
+    private val announcedToday: StateFlow<Int> = transactionRepository.observeCountSince(startOfToday)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    /** Missed payments today = notifications that failed to parse/announce. */
+    private val missedToday: StateFlow<Int> = transactionRepository.observeUnparsedCountSince(startOfToday)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     val mobileNumber: StateFlow<String> = settingsRepository.mobileNumber
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
 
-    /** Latest received payment from Room (null = empty state). */
-    val latest: StateFlow<Transaction?> = transactionRepository.observeLatest()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-
-    /** Payments announced today (saved + announced = received-success count since midnight). */
-    val announcedToday: StateFlow<Int> = transactionRepository.observeCountSince(startOfToday)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
-
-    /** Missed payments today = notifications that failed to parse/announce. */
-    val missedToday: StateFlow<Int> = transactionRepository.observeUnparsedCountSince(startOfToday)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
-
-    private val _notificationGranted = MutableStateFlow(NotificationAccessHelper.isGranted(context))
-    private val _batteryIgnored = MutableStateFlow(BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context))
-
-    /** Combined protection status: notification access + voice + battery. */
-    val protectionStatus: StateFlow<HomeProtectionStatus> = combine(
+    /** Service + permission state (single source: ServiceController + Android). */
+    private val serviceState: StateFlow<ServiceState> = combine(
+        serviceController.isRunning,
         _notificationGranted,
         _batteryIgnored,
-        voiceEnabled
-    ) { notification, battery, voice ->
-        HomeProtectionStatus(
-            notificationConnected = notification,
+        serviceController.voiceEnabled
+    ) { running, notification, battery, voice ->
+        ServiceState(
+            isRunning = running,
+            notificationGranted = notification,
             batteryAllowed = battery,
-            voiceReady = voice
+            voiceEnabled = voice
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeProtectionStatus())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ServiceState())
 
-    fun toggleMonitoring() {
-        viewModelScope.launch {
-            settingsRepository.setMonitoringEnabled(!monitoringEnabled.value)
-        }
-    }
+    /** Single immutable UI state for the Home screen. */
+    val uiState: StateFlow<ShoutPayUiState> = combine(
+        serviceState,
+        latest,
+        announcedToday,
+        missedToday
+    ) { service, latestTx, announced, missed ->
+        ShoutPayUiState(
+            isServiceRunning = service.isRunning,
+            notificationPermissionGranted = service.notificationGranted,
+            batteryPermissionGranted = service.batteryAllowed,
+            voiceEnabled = service.voiceEnabled,
+            latestTransaction = latestTx,
+            todayTransactionCount = announced,
+            missedTodayCount = missed
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ShoutPayUiState())
+
+    /** The big START/STOP control — delegates to the ServiceController. */
+    fun toggleService() = serviceController.toggle()
 
     fun setMobileNumber(number: String) = viewModelScope.launch {
         settingsRepository.setMobileNumber(number)
@@ -83,8 +102,21 @@ class HomeViewModel @Inject constructor(
     }
 }
 
-data class HomeProtectionStatus(
-    val notificationConnected: Boolean = false,
+/** Internal combined service + permission state. */
+private data class ServiceState(
+    val isRunning: Boolean = false,
+    val notificationGranted: Boolean = false,
     val batteryAllowed: Boolean = false,
-    val voiceReady: Boolean = false
+    val voiceEnabled: Boolean = true
+)
+
+/** Complete UI state for the Home screen (app_design spec). */
+data class ShoutPayUiState(
+    val isServiceRunning: Boolean = false,
+    val notificationPermissionGranted: Boolean = false,
+    val batteryPermissionGranted: Boolean = false,
+    val voiceEnabled: Boolean = true,
+    val latestTransaction: Transaction? = null,
+    val todayTransactionCount: Int = 0,
+    val missedTodayCount: Int = 0
 )

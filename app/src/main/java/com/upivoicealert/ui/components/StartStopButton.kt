@@ -32,110 +32,96 @@ import com.upivoicealert.ui.theme.SuccessGreen
 import com.upivoicealert.ui.theme.SuccessGreenLight
 
 /**
- * The signature ShoutPay control — a large circular START/STOP button.
+ * The signature ShoutPay control — a large circular START/STOP button matching
+ * the app_design home page:
  *
- * OFF state: static gradient indigo disc with "START".
- * ON state:  animated — two expanding/fading pulse rings radiate from a green
- *            "STOP" disc, signalling that the listener is actively capturing
- *            payments.
+ * - Stopped: static indigo gradient disc labelled "START", subtitle below.
+ * - Running: pulse rings radiate from the disc (two expanding/fading rings),
+ *   disc shows "STOP" and the subtitle switches to the listening hint.
+ *
+ * The [active] flag is the real service state (via ServiceController) — never a
+ * local UI guess.
  */
 @Composable
-fun VoiceControlButton(
+fun StartStopButton(
     active: Boolean,
     label: String,
     subtitle: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    diameter: Dp = 210.dp
+    diameter: Dp = 190.dp
 ) {
-    val transition = rememberInfiniteTransition(label = "voicePulse")
+    val transition = rememberInfiniteTransition(label = "shoutPulse")
 
     if (active) {
         val scale1 by transition.animateFloat(
             initialValue = 1f,
-            targetValue = 1.75f,
+            targetValue = 1.6f,
             animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 1600, easing = LinearEasing),
+                animation = tween(1500, easing = LinearEasing),
                 repeatMode = RepeatMode.Restart
             ),
             label = "pulseScale1"
         )
         val alpha1 by transition.animateFloat(
-            initialValue = 0.55f,
+            initialValue = 0.5f,
             targetValue = 0f,
             animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 1600, easing = LinearEasing),
+                animation = tween(1500, easing = LinearEasing),
                 repeatMode = RepeatMode.Restart
             ),
             label = "pulseAlpha1"
         )
         val scale2 by transition.animateFloat(
             initialValue = 1f,
-            targetValue = 1.75f,
+            targetValue = 1.6f,
             animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 1600, easing = LinearEasing, delayMillis = 800),
+                animation = tween(1500, easing = LinearEasing, delayMillis = 750),
                 repeatMode = RepeatMode.Restart
             ),
             label = "pulseScale2"
         )
         val alpha2 by transition.animateFloat(
-            initialValue = 0.55f,
+            initialValue = 0.5f,
             targetValue = 0f,
             animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 1600, easing = LinearEasing, delayMillis = 800),
+                animation = tween(1500, easing = LinearEasing, delayMillis = 750),
                 repeatMode = RepeatMode.Restart
             ),
             label = "pulseAlpha2"
         )
 
-        Box(modifier = modifier, contentAlignment = Alignment.Center) {
-            // Pulse rings
-            Box(
-                modifier = Modifier
-                    .size(diameter)
-                    .scale(scale1)
-                    .alpha(alpha1)
-                    .background(color = SuccessGreenLight, shape = CircleShape)
-            )
-            Box(
-                modifier = Modifier
-                    .size(diameter)
-                    .scale(scale2)
-                    .alpha(alpha2)
-                    .background(color = SuccessGreenLight, shape = CircleShape)
-            )
-            // Core disc
-            ControlDisc(
-                diameter = diameter,
-                label = label,
-                subtitle = subtitle,
-                active = true,
-                onClick = onClick
-            )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(contentAlignment = Alignment.Center) {
+                // Pulse rings
+                Box(
+                    modifier = Modifier
+                        .size(diameter)
+                        .scale(scale1)
+                        .alpha(alpha1)
+                        .background(color = SuccessGreenLight, shape = CircleShape)
+                )
+                Box(
+                    modifier = Modifier
+                        .size(diameter)
+                        .scale(scale2)
+                        .alpha(alpha2)
+                        .background(color = SuccessGreenLight, shape = CircleShape)
+                )
+                Disc(label = label, active = true, onClick = onClick, diameter = diameter)
+            }
+            Subtitle(text = subtitle)
         }
     } else {
-        Box(modifier = modifier, contentAlignment = Alignment.Center) {
-            ControlDisc(
-                diameter = diameter,
-                label = label,
-                subtitle = subtitle,
-                active = false,
-                onClick = onClick
-            )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Disc(label = label, active = false, onClick = onClick, diameter = diameter)
+            Subtitle(text = subtitle)
         }
     }
 }
 
 @Composable
-private fun ControlDisc(
-    diameter: Dp,
-    label: String,
-    subtitle: String,
-    active: Boolean,
-    onClick: () -> Unit
-) {
-    // Active state is a solid green disc (pulse rings already add motion); the
-    // OFF state keeps the brand's indigo gradient.
+private fun Disc(label: String, active: Boolean, onClick: () -> Unit, diameter: Dp) {
     val brush = if (active) {
         Brush.linearGradient(listOf(SuccessGreen, SuccessGreen))
     } else {
@@ -152,15 +138,19 @@ private fun ControlDisc(
         Text(
             text = label,
             color = OnIndigo,
-            fontSize = 34.sp,
+            fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 4.sp
         )
-        Text(
-            text = subtitle,
-            color = OnIndigo.copy(alpha = 0.85f),
-            style = MaterialTheme.typography.labelMedium,
-            modifier = Modifier.alpha(1f)
-        )
     }
+}
+
+@Composable
+private fun Subtitle(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.alpha(1f)
+    )
 }

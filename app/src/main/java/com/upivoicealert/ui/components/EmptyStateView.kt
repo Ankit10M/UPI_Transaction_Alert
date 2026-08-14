@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Generic empty-state view: soft icon circle, title and optional supporting
- * text, centered vertically within its available space.
+ * text, centered within its available space.
  */
 @Composable
 fun EmptyStateView(

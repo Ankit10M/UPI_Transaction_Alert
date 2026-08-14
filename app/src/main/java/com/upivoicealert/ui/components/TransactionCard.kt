@@ -29,16 +29,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.upivoicealert.R
 import com.upivoicealert.domain.model.Transaction
+import com.upivoicealert.ui.theme.ShoutPayIndigo
 import com.upivoicealert.ui.theme.SuccessGreen
 import com.upivoicealert.ui.theme.SuccessGreenLight
-import com.upivoicealert.ui.theme.ShoutPayIndigo
 import com.upivoicealert.utils.DateTimeUtils
 import com.upivoicealert.utils.PackageNames
 
 /**
- * Transaction card: sender avatar, sender name, source app, relative time,
- * green "+ ₹amount", and an "Announced" chip. Optionally exposes a Replay
- * Voice action (History screen).
+ * Transaction card: sender avatar initials, sender name, source app · time,
+ * green "+ ₹amount", and a Voice Played / Not announced chip. Optionally exposes
+ * a Replay Voice action (History screen). Matches the app_design list rows.
  */
 @Composable
 fun TransactionCard(
@@ -57,70 +57,69 @@ fun TransactionCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         onClick = onClick
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            SenderAvatar(transaction.sender)
-            Column(
+        Column {
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = transaction.sender.ifBlank { "Unknown" },
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "${PackageNames.labelFor(transaction.packageName).takeIf { it.isNotBlank() } ?: transaction.upiApp} · ${DateTimeUtils.formatRelativeTime(transaction.createdAt)}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "+ ${DateTimeUtils.formatCurrency(transaction.amount)}",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = SuccessGreen
-                )
-                if (showReplay) {
-                    OutlinedButton(
-                        onClick = onReplay,
-                        modifier = Modifier.padding(top = 6.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.VolumeUp,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = stringResource(R.string.history_replay),
-                            style = MaterialTheme.typography.labelMedium,
-                            modifier = Modifier.padding(start = 6.dp)
-                        )
+                SenderAvatar(transaction.sender)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = transaction.sender.ifBlank { stringResource(R.string.unknown_sender) },
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "${appLabel(transaction)} · ${DateTimeUtils.formatTime(transaction.createdAt)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "+ ${DateTimeUtils.formatCurrency(transaction.amount)}",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = SuccessGreen
+                    )
+                    if (showReplay) {
+                        OutlinedButton(
+                            onClick = onReplay,
+                            modifier = Modifier.padding(top = 6.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.VolumeUp,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.history_replay),
+                                style = MaterialTheme.typography.labelMedium,
+                                modifier = Modifier.padding(start = 6.dp)
+                            )
+                        }
                     }
                 }
             }
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, bottom = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AnnouncedChip(
-                announced = transaction.voiceAnnounced,
-                labelOverride = chipLabel
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, bottom = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AnnouncedChip(announced = transaction.voiceAnnounced, labelOverride = chipLabel)
+            }
         }
     }
 }
@@ -146,7 +145,7 @@ fun AnnouncedChip(
             modifier = Modifier.size(14.dp)
         )
         Text(
-            text = if (announced && labelOverride != null) labelOverride else stringResource(
+            text = labelOverride ?: stringResource(
                 if (announced) R.string.history_announced else R.string.history_not_announced
             ),
             style = MaterialTheme.typography.labelSmall,
@@ -187,5 +186,14 @@ private fun SenderAvatar(sender: String, size: Int = 44) {
                 modifier = Modifier.size(size.dp * 0.7f)
             )
         }
+    }
+}
+
+private fun appLabel(transaction: Transaction): String {
+    val fromPackage = PackageNames.labelFor(transaction.packageName)
+    return when {
+        fromPackage.isNotBlank() && fromPackage != transaction.packageName -> fromPackage
+        transaction.upiApp.isNotBlank() -> transaction.upiApp
+        else -> "UPI"
     }
 }
