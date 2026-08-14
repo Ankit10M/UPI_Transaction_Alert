@@ -18,6 +18,11 @@ val AccentBlue = Color(0xFF288AE2)
 val AccentBlueContainer = Color(0xFFD6ECFF)
 val OnAccentBlueContainer = Color(0xFF0A3A66)
 
+/** Electric blue — premium fintech accent for glows, gradients and CTA highlights (dark UI). */
+val ElectricBlue = Color(0xFF2E6BFF)
+val ElectricBlueBright = Color(0xFF5E93FF)
+val ElectricBlueDeep = Color(0xFF1B4FD8)
+
 /** Warm peach tertiary accent (hero illustration, subtle highlights). */
 val PeachAccent = Color(0xFFE1A46E)
 val PeachContainer = Color(0xFFFFE9D6)

@@ -3,12 +3,20 @@
     <string name="notification_listener_label">ShoutPay — UPI payment voice alerts</string>
 
     <!-- Landing / Onboarding -->
-    <string name="landing_hero">Your UPI payments,\nloud and clear.</string>
-    <string name="landing_subtitle">Get instant voice alerts whenever you receive money.</string>
-    <string name="landing_cta">Start Using ShoutPay</string>
-    <string name="landing_trust_1">Works with UPI apps</string>
-    <string name="landing_trust_2">Instant voice alerts</string>
-    <string name="landing_trust_3">No internet required</string>
+    <string name="landing_login_prompt">Already have an account?</string>
+    <string name="landing_login">Login</string>
+    <string name="landing_hero">Never miss a UPI payment again</string>
+    <string name="landing_subtitle">ShoutPay announces every payment instantly and keeps your collections organized.</string>
+    <string name="landing_cta">Start using ShoutPay</string>
+    <string name="landing_trust_title">Why merchants choose ShoutPay</string>
+    <string name="landing_trust_1">Works with all UPI apps</string>
+    <string name="landing_trust_2">Instant voice payment alerts</string>
+    <string name="landing_trust_3">No hardware required</string>
+    <string name="landing_security_note">Your payment data stays private on your phone</string>
+    <string name="landing_proof_title">Built for Indian merchants</string>
+    <string name="landing_proof_tag_1">UPI Payments</string>
+    <string name="landing_proof_tag_2">Multi-language Voice</string>
+    <string name="landing_proof_tag_3">Daily Collection Tracking</string>
 
     <string name="onboarding_title">ShoutPay</string>
     <string name="onboarding_subtitle">Listen to your payments</string>
