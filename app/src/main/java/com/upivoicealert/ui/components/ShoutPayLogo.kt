@@ -14,18 +14,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.upivoicealert.ui.theme.OnIndigo
-import com.upivoicealert.ui.theme.ShoutPayIndigo
-import com.upivoicealert.ui.theme.ShoutPayIndigoDark
+import com.upivoicealert.ui.theme.SuccessGreen
 
 /**
- * ShoutPay brand mark — indigo gradient rounded tile with a megaphone glyph
- * followed by the wordmark. Matches the app_design top bar / landing page.
+ * ShoutPay brand mark — green rounded tile with a megaphone glyph
+ * followed by the wordmark. Matches the updated landing page style.
  */
 @Composable
 fun ShoutPayLogo(
@@ -42,7 +40,7 @@ fun ShoutPayLogo(
             modifier = Modifier
                 .size(tileSize)
                 .background(
-                    brush = Brush.linearGradient(listOf(ShoutPayIndigo, ShoutPayIndigoDark)),
+                    color = SuccessGreen,
                     shape = RoundedCornerShape(tileSize * 0.28f)
                 ),
             contentAlignment = Alignment.Center

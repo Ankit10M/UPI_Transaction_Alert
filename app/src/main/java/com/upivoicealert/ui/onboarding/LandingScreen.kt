@@ -58,6 +58,7 @@ import com.upivoicealert.ui.theme.ElectricBlueDeep
 import com.upivoicealert.ui.theme.OnSurfaceDark
 import com.upivoicealert.ui.theme.OnSurfaceVariantDark
 import com.upivoicealert.ui.theme.OutlineDark
+import com.upivoicealert.ui.theme.SuccessGreen
 import com.upivoicealert.ui.theme.SurfaceDark
 
 /**
@@ -83,15 +84,15 @@ fun LandingScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(Modifier.height(12.dp))
-        LandingHeader(onLogin)
+        LandingHeader()
         Spacer(Modifier.height(24.dp))
         HeroCard()
         Spacer(Modifier.height(16.dp))
         TrustCard()
         Spacer(Modifier.height(20.dp))
         CtaSection(onStart)
-        Spacer(Modifier.height(16.dp))
-        SocialProofCard()
+        // Spacer(Modifier.height(16.dp))
+        // SocialProofCard()
         Spacer(Modifier.height(32.dp))
     }
 }
@@ -99,35 +100,18 @@ fun LandingScreen(
 // ─── Top header ────────────────────────────────────────────────────────────────
 
 @Composable
-private fun LandingHeader(onLogin: () -> Unit) {
+private fun LandingHeader() {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         color = SurfaceDark,
         border = BorderStroke(1.dp, OutlineDark)
     ) {
-        Row(
+        Box(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
+            contentAlignment = Alignment.Center
         ) {
             ShoutPayLogo(tileSize = 34.dp)
-            Spacer(Modifier.weight(1f))
-            Text(
-                text = stringResource(R.string.landing_login_prompt),
-                style = MaterialTheme.typography.bodySmall,
-                color = OnSurfaceVariantDark
-            )
-            Spacer(Modifier.width(6.dp))
-            Text(
-                text = stringResource(R.string.landing_login),
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = ElectricBlueBright,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .clickable(onClick = onLogin)
-                    .padding(horizontal = 2.dp, vertical = 2.dp)
-            )
         }
     }
 }
@@ -199,39 +183,28 @@ private fun PulseVoiceBadge() {
         PulseRing(phase = pulse)
         PulseRing(phase = (pulse + 0.5f) % 1f)
 
-        // Main tile: speaker + rupee
+        // Main tile: rupee
         Box(
             modifier = Modifier
                 .size(78.dp)
                 .background(
-                    brush = Brush.linearGradient(
-                        listOf(ElectricBlueBright, ElectricBlue, ElectricBlueDeep)
-                    ),
+                    color = SuccessGreen,
                     shape = CircleShape
                 )
                 .shadow(
                     elevation = 14.dp,
                     shape = CircleShape,
-                    ambientColor = ElectricBlue,
-                    spotColor = ElectricBlue
+                    ambientColor = SuccessGreen,
+                    spotColor = SuccessGreen
                 ),
             contentAlignment = Alignment.Center
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Filled.VolumeUp,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(2.dp))
-                Text(
-                    text = "₹",
-                    color = Color.White,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            Text(
+                text = "₹",
+                color = Color.White,
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
@@ -358,6 +331,7 @@ private fun CtaSection(onStart: () -> Unit) {
 
 // ─── Social proof card ─────────────────────────────────────────────────────────
 
+/*
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SocialProofCard() {
@@ -406,3 +380,4 @@ private fun ProofTag(text: String) {
         )
     }
 }
+*/
