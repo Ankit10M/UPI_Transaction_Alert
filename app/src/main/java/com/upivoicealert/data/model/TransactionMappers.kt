@@ -26,7 +26,8 @@ fun TransactionEntity.toDomain(): Transaction = Transaction(
     notificationKey = notificationKey,
     originalNotificationText = originalNotificationText,
     cleanedNotificationText = cleanedNotificationText,
-    voiceAnnounced = voiceAnnounced
+    voiceAnnounced = voiceAnnounced,
+    dedupFingerprint = dedupFingerprint
 )
 
 fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
@@ -46,7 +47,8 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     notificationKey = notificationKey,
     originalNotificationText = originalNotificationText,
     cleanedNotificationText = cleanedNotificationText,
-    voiceAnnounced = voiceAnnounced
+    voiceAnnounced = voiceAnnounced,
+    dedupFingerprint = dedupFingerprint
 )
 
 fun UnparsedNotificationEntity.toDomain(): UnparsedNotification = UnparsedNotification(

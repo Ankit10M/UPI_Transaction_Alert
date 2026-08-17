@@ -32,8 +32,39 @@ interface TransactionDao {
     @Query("SELECT COUNT(*) FROM transactions WHERE createdAt >= :since")
     fun observeCountSince(since: Long): Flow<Int>
 
-    @Query("SELECT * FROM transactions WHERE transactionId = :transactionId AND upiApp = :upiApp LIMIT 1")
-    suspend fun findByReferenceId(transactionId: String, upiApp: String): TransactionEntity?
+    /**
+     * Reference-ID / UTR lookup. Source-agnostic on purpose: a UPI reference is
+     * globally unique per payment, so the SAME payment reported by GPay and by a
+     * bank notification must match regardless of which app label the rows carry.
+     */
+    @Query("SELECT * FROM transactions WHERE transactionId = :transactionId LIMIT 1")
+    suspend fun findByReferenceIdGlobal(transactionId: String): TransactionEntity?
+
+    /**
+     * Cross-source fingerprint match within the dedup window. Used when the
+     * incoming notification carries NO reference ID — matches any stored row
+     * with the same fingerprint in the window.
+     */
+    @Query("SELECT * FROM transactions WHERE dedupFingerprint = :fingerprint AND createdAt BETWEEN :windowStart AND :windowEnd LIMIT 1")
+    suspend fun findByFingerprint(
+        fingerprint: String,
+        windowStart: Long,
+        windowEnd: Long
+    ): TransactionEntity?
+
+    /**
+     * Fingerprint match restricted to stored rows WITHOUT a reference ID. Used
+     * when the incoming notification HAS a reference ID that was not found — an
+     * existing row carrying a DIFFERENT reference is a genuinely different
+     * payment and must never be blocked; a row without a reference is a likely
+     * same-payment report from a source that did not expose the UTR.
+     */
+    @Query("SELECT * FROM transactions WHERE dedupFingerprint = :fingerprint AND (transactionId IS NULL OR TRIM(transactionId) = '') AND createdAt BETWEEN :windowStart AND :windowEnd LIMIT 1")
+    suspend fun findByFingerprintNullRef(
+        fingerprint: String,
+        windowStart: Long,
+        windowEnd: Long
+    ): TransactionEntity?
 
     @Query("SELECT * FROM transactions WHERE TRIM(rawNotification) = TRIM(:rawNotification) AND createdAt BETWEEN :windowStart AND :windowEnd LIMIT 1")
     suspend fun findExactDuplicate(

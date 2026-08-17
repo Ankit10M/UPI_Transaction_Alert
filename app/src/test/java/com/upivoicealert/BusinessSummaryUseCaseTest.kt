@@ -52,6 +52,24 @@ class BusinessSummaryUseCaseTest {
         assertNull(summary.peakPaymentHour)
     }
 
+    @Test
+    fun `multiple valid payments sum to total collection`() = runTest {
+        // TEST CASE 4: three distinct payments of ₹10, ₹20, ₹50 -> collection ₹80.
+        val transactions = listOf(
+            transaction(amount = 10.0, createdAt = today + 10 * hour),
+            transaction(amount = 20.0, createdAt = today + 11 * hour),
+            transaction(amount = 50.0, createdAt = today + 12 * hour)
+        )
+        val useCase = BusinessSummaryUseCase(FakeTransactionRepository(transactions))
+
+        val summary = useCase.observeTodaySummary().first()
+
+        assertEquals(80.0, summary.totalCollection, 0.001)
+        assertEquals(3, summary.transactionCount)
+        assertEquals(80.0 / 3, summary.averageTransactionValue, 0.001)
+        assertEquals(50.0, summary.largestPayment, 0.001)
+    }
+
     private fun transaction(amount: Double, createdAt: Long) = Transaction(
         id = "t-$amount-$createdAt",
         amount = amount,

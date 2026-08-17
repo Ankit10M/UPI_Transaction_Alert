@@ -22,5 +22,9 @@ data class Transaction(
     val cleanedNotificationText: String = "",
     // Voice status (schema v3): true when the payment was announced by the TTS
     // engine at capture time (or replayed later from History).
-    val voiceAnnounced: Boolean = false
+    val voiceAnnounced: Boolean = false,
+    // Cross-source dedup fingerprint (schema v4): computed at insert time by the
+    // data layer (TransactionFingerprint) and persisted for the duplicate check.
+    // Never constructed by parsers — default null keeps all pipeline paths unchanged.
+    val dedupFingerprint: String? = null
 )

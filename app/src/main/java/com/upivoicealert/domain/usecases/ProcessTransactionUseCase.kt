@@ -20,7 +20,7 @@ import com.upivoicealert.parser.ValidationResult
 import com.upivoicealert.parser.toTransaction
 import com.upivoicealert.utils.PackageNames
 import com.upivoicealert.voice.AnnouncementTemplates
-import com.upivoicealert.voice.VoiceAnnouncementEngine
+import com.upivoicealert.voice.VoiceAnnouncement
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -49,7 +49,7 @@ class ProcessTransactionUseCase @Inject constructor(
     private val serviceStateRepository: ServiceStateRepository,
     private val settingsRepository: SettingsRepository,
     private val announcementTemplates: AnnouncementTemplates,
-    private val voiceEngine: VoiceAnnouncementEngine
+    private val voiceEngine: VoiceAnnouncement
 ) {
 
     suspend fun processNotification(

@@ -12,6 +12,8 @@ import com.upivoicealert.domain.repository.SettingsRepository
 import com.upivoicealert.domain.repository.SubscriptionRepository
 import com.upivoicealert.domain.repository.TransactionRepository
 import com.upivoicealert.domain.repository.UserRepository
+import com.upivoicealert.voice.VoiceAnnouncement
+import com.upivoicealert.voice.VoiceAnnouncementEngine
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -45,4 +47,13 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindServiceStateRepository(impl: ServiceStateRepositoryImpl): ServiceStateRepository
+
+    /**
+     * Pipeline-facing voice engine: the transaction pipeline depends on the
+     * narrow [VoiceAnnouncement] contract (unit-testable); the same singleton
+     * [VoiceAnnouncementEngine] remains the concrete implementation.
+     */
+    @Binds
+    @Singleton
+    abstract fun bindVoiceAnnouncement(impl: VoiceAnnouncementEngine): VoiceAnnouncement
 }

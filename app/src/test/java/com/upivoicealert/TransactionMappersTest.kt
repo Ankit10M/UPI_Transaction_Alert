@@ -80,5 +80,15 @@ class TransactionMappersTest {
         assertEquals("", back.cleanedNotificationText)
         assertEquals(legacy.rawNotification, back.rawNotification)
         assertEquals(false, back.voiceAnnounced)
+        // Legacy rows carry no fingerprint (schema v4 default).
+        assertNull(back.dedupFingerprint)
+    }
+
+    @Test
+    fun `dedup fingerprint survives domain entity round trip`() {
+        val domain = baseEntity.toDomain().copy(dedupFingerprint = "10|PRIYA BRIJESH MISHRA|RECEIVED")
+        val entity = domain.toEntity()
+        assertEquals("10|PRIYA BRIJESH MISHRA|RECEIVED", entity.dedupFingerprint)
+        assertEquals("10|PRIYA BRIJESH MISHRA|RECEIVED", entity.toDomain().dedupFingerprint)
     }
 }

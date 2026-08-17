@@ -23,7 +23,7 @@ import javax.inject.Singleton
 @Singleton
 class VoiceAnnouncementEngine @Inject constructor(
     @ApplicationContext private val context: Context
-) {
+) : VoiceAnnouncement {
 
     private var tts: TextToSpeech? = null
     private val ready = AtomicBoolean(false)
@@ -52,7 +52,7 @@ class VoiceAnnouncementEngine @Inject constructor(
      *      that only register variant tags such as "hi-IN-x-hi-network")
      */
     @Synchronized
-    fun prepare(language: VoiceLanguage, speechRate: Float): Boolean {
+    override fun prepare(language: VoiceLanguage, speechRate: Float): Boolean {
         val engine = tts
         if (engine == null || !ready.get()) {
             Log.w(TAG, "PREPARE_SKIPPED engineReady=${ready.get()} enginePresent=${engine != null} language=${language.name}")
@@ -95,7 +95,7 @@ class VoiceAnnouncementEngine @Inject constructor(
     }
 
     @Synchronized
-    fun speak(text: String) {
+    override fun speak(text: String) {
         val engine = tts ?: return
         if (!ready.get()) {
             Log.w(TAG, "SPEAK_SKIPPED engineNotReady")

@@ -37,56 +37,92 @@ class TransactionRepositoryImpl @Inject constructor(
     override fun observeCountSince(since: Long): Flow<Int> = transactionDao.observeCountSince(since)
 
     /**
-     * Hybrid deduplication (CLAUDE.md Module 4, priorities as fixed):
+     * Hybrid deduplication (CLAUDE.md Module 4, production fixes):
      *
-     * 1. UPI reference ID / transaction ID: if the incoming transaction carries
-     *    one, it is a duplicate only when the SAME ID is already stored for the
-     *    same UPI app. A different ID means a different payment — never blocked.
-     * 2. No reference ID available: duplicate only when the EXACT same raw
-     *    notification text was stored within the short window (covers the
-     *    "Processing -> Success" repost pattern). Amount + sender + app alone is
-     *    NOT sufficient — distinct same-amount payments must not be blocked.
+     * 1. UPI reference ID / UTR (primary): matched GLOBALLY, source-agnostic.
+     *    A UPI reference is unique per payment, so a reference reported by GPay
+     *    and by a bank notification must resolve to the SAME transaction — the
+     *    previous per-app restriction caused one payment to be stored twice and
+     *    the Business Summary to double-count the collection.
+     * 2. Cross-source fingerprint (secondary, when the reference is unavailable
+     *    on one or both sides): amount + normalized sender + transaction type
+     *    within the dedup window. If the incoming carries a reference that was
+     *    not found, only existing rows WITHOUT a reference are matched (an
+     *    existing row with a different reference is a genuinely different
+     *    payment and is never blocked).
+     * 3. Exact same cleaned notification reposted within the window (tertiary,
+     *    covers the "Processing -> Success" repost pattern).
      *
      * Every decision is logged under tag "UPI_DUPLICATE_DEBUG".
      */
     override suspend fun isDuplicate(transaction: Transaction): Boolean {
+        val windowStart = transaction.createdAt - Constants.DEDUP_WINDOW_MS
+        val windowEnd = transaction.createdAt + Constants.DEDUP_WINDOW_MS
+        val fingerprint = TransactionFingerprint.compute(transaction)
+        val incomingRef = transaction.transactionId?.trim()?.takeIf { it.isNotEmpty() }
         Log.i(
             DUP_TAG,
-            "CHECK_START amount=${transaction.amount} sender=${transaction.sender} app=${transaction.upiApp} incomingRef=${transaction.transactionId ?: "<none>"} createdAt=${transaction.createdAt}"
+            "CHECK_START amount=${transaction.amount} sender=${transaction.sender} app=${transaction.upiApp} " +
+                "package=${transaction.packageName} referenceId=${incomingRef ?: "<none>"} " +
+                "generatedFingerprint=${fingerprint ?: "<none>"} createdAt=${transaction.createdAt} " +
+                "windowStart=$windowStart windowEnd=$windowEnd"
         )
 
-        // Priority 1 & 2: UPI reference ID / transaction ID.
-        val incomingRef = transaction.transactionId
+        // Priority 1: UPI reference ID / UTR — globally unique across all sources.
         if (incomingRef != null) {
-            val existing = transactionDao.findByReferenceId(incomingRef, transaction.upiApp)
+            val existing = transactionDao.findByReferenceIdGlobal(incomingRef)
             if (existing != null) {
                 Log.i(
                     DUP_TAG,
-                    "DECISION=DUPLICATE reason=same_reference_id incomingRef=$incomingRef app=${transaction.upiApp} existingId=${existing.id} existingRef=${existing.transactionId}"
+                    "DECISION=DUPLICATE matched=referenceId reason=same_reference_id " +
+                        "incomingRef=$incomingRef existingId=${existing.id} existingApp=${existing.upiApp} " +
+                        "existingRef=${existing.transactionId ?: "<none>"}"
                 )
                 return true
             }
             Log.i(
                 DUP_TAG,
-                "DECISION=NOT_DUPLICATE reason=reference_id_not_found checkedRef=$incomingRef app=${transaction.upiApp} existingId=<none>"
+                "DECISION=NOT_DUPLICATE_YET reason=reference_id_not_found checkedRef=$incomingRef"
             )
-            return false
+        }
+
+        // Priority 2: cross-source fingerprint within the window.
+        if (fingerprint != null) {
+            val existing = if (incomingRef != null) {
+                transactionDao.findByFingerprintNullRef(fingerprint, windowStart, windowEnd)
+            } else {
+                transactionDao.findByFingerprint(fingerprint, windowStart, windowEnd)
+            }
+            if (existing != null) {
+                Log.i(
+                    DUP_TAG,
+                    "DECISION=DUPLICATE matched=fingerprint reason=cross_source_fingerprint " +
+                        "amount=${transaction.amount} sender=${transaction.sender} fingerprint=$fingerprint " +
+                        "existingId=${existing.id} existingApp=${existing.upiApp} " +
+                        "existingRef=${existing.transactionId ?: "<none>"}"
+                )
+                return true
+            }
+            Log.i(
+                DUP_TAG,
+                "DECISION=NOT_DUPLICATE_YET reason=fingerprint_no_match fingerprint=$fingerprint"
+            )
         }
 
         // Priority 3 (fallback): exact same notification reposted within the window.
-        val windowStart = transaction.createdAt - Constants.DEDUP_WINDOW_MS
-        val windowEnd = transaction.createdAt + Constants.DEDUP_WINDOW_MS
         val existing = transactionDao.findExactDuplicate(transaction.rawNotification, windowStart, windowEnd)
         if (existing != null) {
             Log.i(
                 DUP_TAG,
-                "DECISION=DUPLICATE reason=exact_notification_reposted windowStart=$windowStart windowEnd=$windowEnd existingId=${existing.id} existingCreatedAt=${existing.createdAt}"
+                "DECISION=DUPLICATE matched=rawNotification reason=exact_notification_reposted " +
+                    "windowStart=$windowStart windowEnd=$windowEnd existingId=${existing.id} " +
+                    "existingCreatedAt=${existing.createdAt}"
             )
             return true
         }
         Log.i(
             DUP_TAG,
-            "DECISION=NOT_DUPLICATE reason=no_exact_notification_in_window windowStart=$windowStart windowEnd=$windowEnd"
+            "DECISION=NOT_DUPLICATE reason=no_match_found windowStart=$windowStart windowEnd=$windowEnd"
         )
         return false
     }
@@ -96,11 +132,12 @@ class TransactionRepositoryImpl @Inject constructor(
             Log.i(DUP_TAG, "IGNORED id=${transaction.id} incomingRef=${transaction.transactionId ?: "<none>"} reason=duplicate")
             return false
         }
-        val rowId = transactionDao.insert(transaction.toEntity())
+        val fingerprint = TransactionFingerprint.compute(transaction)
+        val rowId = transactionDao.insert(transaction.copy(dedupFingerprint = fingerprint).toEntity())
         val inserted = rowId != -1L
         Log.i(
             DUP_TAG,
-            if (inserted) "INSERTED id=${transaction.id} incomingRef=${transaction.transactionId ?: "<none>"}"
+            if (inserted) "INSERTED id=${transaction.id} incomingRef=${transaction.transactionId ?: "<none>"} fingerprint=$fingerprint"
             else "INSERT_CONFLICT id=${transaction.id} incomingRef=${transaction.transactionId ?: "<none>"}"
         )
         return inserted
