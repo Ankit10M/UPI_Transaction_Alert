@@ -60,16 +60,10 @@ class ProcessTransactionUseCase @Inject constructor(
     ): ProcessingResult {
         Log.i(TAG, "PROCESS_START package=$packageName postTime=$postTime rawText=$rawText")
 
-        // Master service switch (Home screen START/STOP): when the service is
-        // stopped nothing enters the pipeline — no save, no announcement. The
-        // NotificationListenerService itself stays connected to the system.
-        if (serviceStateRepository.getStatus() != ServiceStatus.SERVICE_RUNNING) {
-            Log.i(TAG, "MONITORING_DISABLED package=$packageName (service stopped by user)")
-            return ProcessingResult.IGNORED
-        }
-
-        // Normalize once at the pipeline entry: the filter, classifier, parsers,
-        // stored raw text and exact-match dedup fallback all see clean text.
+        // The transaction pipeline ALWAYS executes. The Home screen START/STOP
+        // control no longer gates processing — it only gates the TTS announcement
+        // (see process()). Payments are detected, saved and counted in history and
+        // the business summary in both states; only the spoken alert is affected.
         val text = textCleaner.clean(rawText)
         Log.i(TAG, "CLEANED_TEXT package=$packageName text=$text")
         if (text.isBlank()) {
@@ -167,7 +161,15 @@ class ProcessTransactionUseCase @Inject constructor(
         // name, never the receiver's own number, so gating announcements on the
         // configured number silently disabled voice for every user who added one.
         // Announce whenever voice is enabled.
-        val shouldAnnounce = runCatching { settingsRepository.isVoiceEnabled() }.getOrDefault(false)
+        //
+        // BUGFIX (Day 0): the Home START/STOP control gates ONLY the spoken
+        // announcement, never transaction processing. Transactions are always
+        // saved (history + business summary update in both states); TTS fires
+        // only when voice is enabled AND the service is running.
+        val shouldAnnounce = runCatching {
+            settingsRepository.isVoiceEnabled() &&
+                serviceStateRepository.getStatus() == ServiceStatus.SERVICE_RUNNING
+        }.getOrDefault(false)
         val transactionWithVoice = transaction.copy(voiceAnnounced = shouldAnnounce)
 
         val inserted = transactionRepository.insertTransactionIfNotDuplicate(transactionWithVoice)

@@ -1,13 +1,10 @@
 package com.upivoicealert.domain.usecases
 
-import com.upivoicealert.domain.model.ServiceStatus
-import com.upivoicealert.domain.repository.ServiceStateRepository
 import com.upivoicealert.domain.repository.TransactionRepository
 import javax.inject.Inject
 
 class RetryUnparsedQueueUseCase @Inject constructor(
     private val repository: TransactionRepository,
-    private val serviceStateRepository: ServiceStateRepository,
     private val processTransactionUseCase: ProcessTransactionUseCase
 ) {
 
@@ -16,14 +13,11 @@ class RetryUnparsedQueueUseCase @Inject constructor(
      * deleted before reprocessing to avoid queue duplication; records that still fail
      * are re-added by the pipeline. Returns the number of newly-processed transactions.
      *
-     * When the user has stopped the voice service (monitoring disabled), retries are
-     * skipped WITHOUT touching the queue — otherwise the records would be deleted
-     * here and then dropped by the pipeline's monitoring gate before being re-added.
+     * Day 0 product fix: the START/STOP state gates ONLY the TTS announcement, so
+     * retries always run the pipeline — a payment re-parsed while the service is
+     * stopped is still saved (history + business summary update) but not spoken.
      */
     suspend fun retryAll(): Int {
-        if (serviceStateRepository.getStatus() != ServiceStatus.SERVICE_RUNNING) {
-            return 0
-        }
         val pending = repository.getUnparsedNotifications()
         var succeeded = 0
         for (item in pending) {

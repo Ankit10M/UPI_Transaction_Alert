@@ -33,59 +33,24 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * BUG #1 verification — START/STOP gating.
+ * BUG #1 (Day 0 product fix) — the START/STOP control gates ONLY the spoken
+ * announcement, never transaction processing.
  *
- * The NotificationListenerService stays connected to the system in BOTH states;
- * the big STOP control only flips the persisted run state, and the pipeline
- * gate in ProcessTransactionUseCase.processNotification() is what stops new
- * payments from being saved or announced. These tests pin that contract:
- *   - SERVICE_STOPPED  -> notification IGNORED, nothing saved, nothing spoken
- *   - SERVICE_RUNNING  -> payment saved + announced (TTS)
- * (TEST CASE 3.)
+ *   START:  detect -> process -> save (history + business summary update) + TTS
+ *   STOP:   detect -> process -> save (history + business summary update), NO TTS
+ *
+ * The NotificationListenerService stays connected in both states; the pipeline
+ * always runs; only VoiceAnnouncementEngine.speak() is skipped when stopped.
+ *
+ * TEST 1 (START + payment):  save = true, TTS = true
+ * TEST 2 (STOP + payment):   save = true (history/business update), TTS = false
  */
-class ProcessTransactionUseCaseServiceGateTest {
+class ProcessTransactionUseCaseVoiceGateTest {
 
     private val now = 1_700_000_000_000L
 
     @Test
-    fun `stopped service ignores payment without saving or speaking`() = runTest {
-        val repo = RecordingTransactionRepository()
-        val useCase = useCase(ServiceStatus.SERVICE_STOPPED, repo)
-
-        val result = useCase.processNotification(
-            packageName = PackageNames.GPAY,
-            rawText = "RAHUL paid you ₹10.00 UPI Ref 123456",
-            postTime = now,
-            notificationKey = "k1"
-        )
-
-        assertEquals(ProcessingResult.IGNORED, result)
-        assertTrue("no insert while stopped", repo.inserted.isEmpty())
-        assertTrue("no unparsed entry while stopped", repo.unparsed.isEmpty())
-        assertTrue("no announcement while stopped", repo.voice.speakCalls.isEmpty())
-    }
-
-    @Test
-    fun `stopped service ignores even a failed parser attempt`() = runTest {
-        val repo = RecordingTransactionRepository()
-        val useCase = useCase(ServiceStatus.SERVICE_STOPPED, repo)
-
-        // A financial notification that would be processed when running must be
-        // ignored outright when stopped (gate runs before filter/classifier).
-        val result = useCase.processNotification(
-            packageName = "com.some.bank",
-            rawText = "₹10.00 received from PRIYA BRIJESH MISHRA Amount credited to XX3434",
-            postTime = now
-        )
-
-        assertEquals(ProcessingResult.IGNORED, result)
-        assertTrue(repo.inserted.isEmpty())
-        assertTrue(repo.unparsed.isEmpty())
-        assertTrue(repo.voice.speakCalls.isEmpty())
-    }
-
-    @Test
-    fun `running service saves and announces payment`() = runTest {
+    fun `start plus payment saves and announces`() = runTest {
         val repo = RecordingTransactionRepository()
         val useCase = useCase(ServiceStatus.SERVICE_RUNNING, repo)
 
@@ -97,13 +62,55 @@ class ProcessTransactionUseCaseServiceGateTest {
         )
 
         assertEquals(ProcessingResult.SAVED, result)
-        assertEquals(1, repo.inserted.size)
         val saved = repo.inserted.single()
         assertEquals(10.0, saved.amount, 0.001)
         assertEquals("RAHUL", saved.sender)
         assertEquals("123456", saved.transactionId)
+        assertTrue("voice flag stored true when running", saved.voiceAnnounced)
         assertEquals(1, repo.voice.speakCalls.size)
         assertTrue(repo.voice.speakCalls[0].contains("Received ten rupees"))
+    }
+
+    @Test
+    fun `stop plus payment still saves but does not announce`() = runTest {
+        val repo = RecordingTransactionRepository()
+        val useCase = useCase(ServiceStatus.SERVICE_STOPPED, repo)
+
+        val result = useCase.processNotification(
+            packageName = PackageNames.GPAY,
+            rawText = "RAHUL paid you ₹10.00 UPI Ref 123456",
+            postTime = now,
+            notificationKey = "k1"
+        )
+
+        assertEquals(ProcessingResult.SAVED, result)
+        val saved = repo.inserted.single()
+        assertEquals(10.0, saved.amount, 0.001)
+        assertEquals("RAHUL", saved.sender)
+        // Saved -> History and Business Summary update automatically via Room flows.
+        assertTrue("transaction persisted while stopped", saved.id.isNotEmpty())
+        assertTrue("voice flag stored false when stopped", !saved.voiceAnnounced)
+        assertTrue("TTS must not be called while stopped", repo.voice.speakCalls.isEmpty())
+        assertTrue("no unparsed entry while stopped (fully processed)", repo.unparsed.isEmpty())
+    }
+
+    @Test
+    fun `stop still parses and saves previously unparseable format without announcing`() = runTest {
+        val repo = RecordingTransactionRepository()
+        val useCase = useCase(ServiceStatus.SERVICE_STOPPED, repo)
+
+        val result = useCase.processNotification(
+            packageName = "com.some.bank",
+            rawText = "₹10.00 received from PRIYA BRIJESH MISHRA Amount credited to XX3434",
+            postTime = now
+        )
+
+        // Pipeline runs regardless of the START/STOP state.
+        assertEquals(ProcessingResult.SAVED, result)
+        assertEquals(1, repo.inserted.size)
+        assertEquals(10.0, repo.inserted.single().amount, 0.001)
+        assertTrue(repo.unparsed.isEmpty())
+        assertTrue(repo.voice.speakCalls.isEmpty())
     }
 
     @Test
