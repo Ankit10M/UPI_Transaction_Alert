@@ -33,9 +33,12 @@ import com.upivoicealert.ui.debug.UnparsedNotificationsScreen
 import com.upivoicealert.ui.history.HistoryScreen
 import com.upivoicealert.ui.home.HomeScreen
 import com.upivoicealert.ui.onboarding.LandingScreen
+import com.upivoicealert.ui.onboarding.MerchantProfileScreen
 import com.upivoicealert.ui.onboarding.MobileNumberScreen
 import com.upivoicealert.ui.onboarding.PermissionSetupScreen
 import com.upivoicealert.ui.onboarding.PrivacyExplanationScreen
+import com.upivoicealert.ui.onboarding.ReadyScreen
+import com.upivoicealert.ui.onboarding.VoiceTestScreen
 import com.upivoicealert.ui.pricing.PricingScreen
 import com.upivoicealert.ui.profile.ProfileScreen
 import com.upivoicealert.ui.verification.VerificationScreen
@@ -51,7 +54,10 @@ object Routes {
     const val LANDING = "landing"
     const val PRIVACY = "privacy"
     const val MOBILE_NUMBER = "mobileNumber"
+    const val MERCHANT_PROFILE = "merchantProfile"
     const val PERMISSION_SETUP = "permissionSetup"
+    const val VOICE_TEST = "voiceTest"
+    const val READY = "ready"
 }
 
 private data class BottomTab(
@@ -169,10 +175,19 @@ fun OnboardingNavHost(onFinished: () -> Unit) {
             PrivacyExplanationScreen(onContinue = { navController.navigate(Routes.MOBILE_NUMBER) })
         }
         composable(Routes.MOBILE_NUMBER) {
-            MobileNumberScreen(onContinue = { navController.navigate(Routes.PERMISSION_SETUP) })
+            MobileNumberScreen(onContinue = { navController.navigate(Routes.MERCHANT_PROFILE) })
+        }
+        composable(Routes.MERCHANT_PROFILE) {
+            MerchantProfileScreen(onContinue = { navController.navigate(Routes.PERMISSION_SETUP) })
         }
         composable(Routes.PERMISSION_SETUP) {
-            PermissionSetupScreen(onFinish = onFinished)
+            PermissionSetupScreen(onFinish = { navController.navigate(Routes.VOICE_TEST) })
+        }
+        composable(Routes.VOICE_TEST) {
+            VoiceTestScreen(onContinue = { navController.navigate(Routes.READY) })
+        }
+        composable(Routes.READY) {
+            ReadyScreen(onFinish = onFinished)
         }
     }
 }

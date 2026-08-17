@@ -39,6 +39,20 @@
     <string name="mobile_number_desc">Enter your mobile number so it shows on your profile. It is optional — ShoutPay announces every received payment.</string>
     <string name="mobile_number_hint">Mobile number (optional)</string>
 
+    <!-- Merchant profile step (Phase 2 onboarding) -->
+    <string name="merchant_profile_title">Merchant profile</string>
+    <string name="merchant_profile_desc">Add your name and shop name. Your profile stays on this device only.</string>
+    <string name="onboarding_next">Continue</string>
+
+    <!-- Voice test step (Phase 2 onboarding) -->
+    <string name="voice_test_title">Test your voice</string>
+    <string name="voice_test_desc">ShoutPay will announce every received payment out loud. Tap Test Voice to hear a sample with your current settings.</string>
+
+    <!-- Ready step (Phase 2 onboarding) -->
+    <string name="ready_title">ShoutPay is ready</string>
+    <string name="ready_desc">You\'re all set. Start receiving payments and ShoutPay announces each one instantly — no need to look at your phone.</string>
+    <string name="ready_cta">Start Using ShoutPay</string>
+
     <!-- Home -->
     <string name="home_add_number">+ Add Number</string>
     <string name="home_add_number_title">Add your mobile number</string>
