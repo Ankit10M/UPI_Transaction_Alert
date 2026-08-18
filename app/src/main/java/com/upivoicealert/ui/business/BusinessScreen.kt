@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -74,6 +75,14 @@ fun BusinessScreen(viewModel: BusinessViewModel = hiltViewModel()) {
                 title = stringResource(R.string.business_empty_title),
                 subtitle = stringResource(R.string.business_empty_body),
                 icon = Icons.Filled.Storefront
+            )
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = stringResource(R.string.business_footer),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 32.dp)
             )
         } else {
             // ─── Today's collection hero card ─────────────────────────────

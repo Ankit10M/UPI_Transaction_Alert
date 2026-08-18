@@ -131,6 +131,22 @@ fun HistoryScreen(
                     subtitle = stringResource(R.string.history_empty_check),
                     icon = Icons.Filled.Wallet
                 )
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = onOpenVerification,
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.FactCheck,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.history_verify),
+                        style = MaterialTheme.typography.labelLarge,
+                        modifier = Modifier.padding(start = 6.dp)
+                    )
+                }
             }
         } else {
             LazyColumn(

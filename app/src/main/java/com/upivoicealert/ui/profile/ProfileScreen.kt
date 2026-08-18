@@ -57,6 +57,7 @@ import com.upivoicealert.ui.components.ShoutPayButton
 import com.upivoicealert.ui.components.ToggleSettingCard
 import com.upivoicealert.ui.theme.ShoutPayIndigo
 import com.upivoicealert.ui.theme.SuccessGreen
+import com.upivoicealert.utils.DateTimeUtils
 import com.upivoicealert.utils.PackageNames
 
 @Composable
@@ -107,10 +108,19 @@ fun ProfileScreen(
         // ─── Profile information (name / shop name / phone) ───────────────
         ProfileInfoCard(
             name = user?.name.orEmpty().ifBlank { viewModel.userName.value },
-            shopName = user?.shopName.orEmpty(),
+            shopName = user?.shopName.orEmpty().ifBlank { stringResource(R.string.profile_shop_not_set) },
             phone = user?.phoneNumber.orEmpty().ifBlank { mobileNumber },
             onEdit = { showEditProfile = true }
         )
+        // Member since
+        user?.createdAt?.takeIf { it > 0 }?.let { createdAt ->
+            Text(
+                text = stringResource(R.string.profile_member_since, DateTimeUtils.formatDate(createdAt)),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp, start = 4.dp)
+            )
+        }
         Spacer(Modifier.height(20.dp))
 
         // ─── Voice announcement toggle ─────────────────────────────────────

@@ -33,17 +33,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * BUG #1 (Day 0 product fix) — the START/STOP control gates ONLY the spoken
- * announcement, never transaction processing.
+ * Phase 3 voice gate tests — voice announcements are independent of the
+ * service START/STOP state. Transactions are always saved; only the spoken
+ * announcement depends on the voiceEnabled setting.
  *
- *   START:  detect -> process -> save (history + business summary update) + TTS
- *   STOP:   detect -> process -> save (history + business summary update), NO TTS
- *
- * The NotificationListenerService stays connected in both states; the pipeline
- * always runs; only VoiceAnnouncementEngine.speak() is skipped when stopped.
- *
- * TEST 1 (START + payment):  save = true, TTS = true
- * TEST 2 (STOP + payment):   save = true (history/business update), TTS = false
+ * TEST 1 (voice enabled + payment):   save = true, TTS = true
+ * TEST 2 (voice enabled + stopped):   save = true, TTS = true (voice is independent)
+ * TEST 3 (voice enabled + unparsable): save = true, TTS = true
+ * TEST 4 (non-payment):               no save, no TTS
  */
 class ProcessTransactionUseCaseVoiceGateTest {
 
@@ -66,14 +63,15 @@ class ProcessTransactionUseCaseVoiceGateTest {
         assertEquals(10.0, saved.amount, 0.001)
         assertEquals("RAHUL", saved.sender)
         assertEquals("123456", saved.transactionId)
-        assertTrue("voice flag stored true when running", saved.voiceAnnounced)
+        assertTrue("voice flag stored true when voice enabled", saved.voiceAnnounced)
         assertEquals(1, repo.voice.speakCalls.size)
         assertTrue(repo.voice.speakCalls[0].contains("Received ten rupees"))
     }
 
     @Test
-    fun `stop plus payment still saves but does not announce`() = runTest {
+    fun `stop plus payment still saves and announces when voice enabled`() = runTest {
         val repo = RecordingTransactionRepository()
+        // Phase 3: voice is independent of service state. voiceEnabled=true in FakeSettingsRepository.
         val useCase = useCase(ServiceStatus.SERVICE_STOPPED, repo)
 
         val result = useCase.processNotification(
@@ -87,16 +85,16 @@ class ProcessTransactionUseCaseVoiceGateTest {
         val saved = repo.inserted.single()
         assertEquals(10.0, saved.amount, 0.001)
         assertEquals("RAHUL", saved.sender)
-        // Saved -> History and Business Summary update automatically via Room flows.
         assertTrue("transaction persisted while stopped", saved.id.isNotEmpty())
-        assertTrue("voice flag stored false when stopped", !saved.voiceAnnounced)
-        assertTrue("TTS must not be called while stopped", repo.voice.speakCalls.isEmpty())
-        assertTrue("no unparsed entry while stopped (fully processed)", repo.unparsed.isEmpty())
+        assertTrue("voice flag stored true when voice enabled (independent of service state)", saved.voiceAnnounced)
+        assertEquals("TTS called when voice enabled (even if service stopped)", 1, repo.voice.speakCalls.size)
+        assertTrue("no unparsed entry (fully processed)", repo.unparsed.isEmpty())
     }
 
     @Test
-    fun `stop still parses and saves previously unparseable format without announcing`() = runTest {
+    fun `stop still parses and saves previously unparseable format and announces`() = runTest {
         val repo = RecordingTransactionRepository()
+        // Phase 3: voice is independent of service state. voiceEnabled=true in FakeSettingsRepository.
         val useCase = useCase(ServiceStatus.SERVICE_STOPPED, repo)
 
         val result = useCase.processNotification(
@@ -110,7 +108,7 @@ class ProcessTransactionUseCaseVoiceGateTest {
         assertEquals(1, repo.inserted.size)
         assertEquals(10.0, repo.inserted.single().amount, 0.001)
         assertTrue(repo.unparsed.isEmpty())
-        assertTrue(repo.voice.speakCalls.isEmpty())
+        assertEquals("TTS called when voice enabled", 1, repo.voice.speakCalls.size)
     }
 
     @Test

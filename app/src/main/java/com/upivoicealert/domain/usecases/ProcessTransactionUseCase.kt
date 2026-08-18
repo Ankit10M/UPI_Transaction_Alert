@@ -156,19 +156,11 @@ class ProcessTransactionUseCase @Inject constructor(
         // never block the save pipeline (CLAUDE.md Section 8), so the flag records
         // the announcement decision, and the actual speak() is best-effort.
         //
-        // BUGFIX (D.5): the mobile number is profile metadata only — it is NOT a
-        // notification-text filter. UPI "received" notifications carry the sender's
-        // name, never the receiver's own number, so gating announcements on the
-        // configured number silently disabled voice for every user who added one.
-        // Announce whenever voice is enabled.
-        //
-        // BUGFIX (Day 0): the Home START/STOP control gates ONLY the spoken
-        // announcement, never transaction processing. Transactions are always
-        // saved (history + business summary update in both states); TTS fires
-        // only when voice is enabled AND the service is running.
+        // Phase 3: voice gate is voiceEnabled ONLY. The service always processes
+        // and saves transactions regardless of voice state — START/STOP controls
+        // only the spoken announcement.
         val shouldAnnounce = runCatching {
-            settingsRepository.isVoiceEnabled() &&
-                serviceStateRepository.getStatus() == ServiceStatus.SERVICE_RUNNING
+            settingsRepository.isVoiceEnabled()
         }.getOrDefault(false)
         val transactionWithVoice = transaction.copy(voiceAnnounced = shouldAnnounce)
 

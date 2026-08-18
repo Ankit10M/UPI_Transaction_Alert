@@ -92,6 +92,17 @@ class ServiceController @Inject constructor(
         if (_isRunning.value) stop() else start()
     }
 
+    /**
+     * Voice-only toggle: controls whether payments are announced out loud.
+     * Does NOT affect the service running state — transactions are always
+     * recorded regardless of this setting.
+     */
+    fun toggleVoice() = scope.launch {
+        val current = settingsRepository.isVoiceEnabled()
+        settingsRepository.setVoiceEnabled(!current)
+        Log.i(TAG, "VOICE_TOGGLED enabled=${!current}")
+    }
+
     private companion object {
         const val TAG = "SHOUTPAY_SERVICE_DEBUG"
     }

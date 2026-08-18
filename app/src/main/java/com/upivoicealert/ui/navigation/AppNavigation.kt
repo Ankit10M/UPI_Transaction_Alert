@@ -138,7 +138,9 @@ fun MainNavHost() {
             composable(Routes.HOME) {
                 HomeScreen(
                     onOpenHistory = { navController.navigate(Routes.HISTORY) },
-                    onOpenVerification = { navController.navigate(Routes.VERIFICATION) }
+                    onOpenVerification = { navController.navigate(Routes.VERIFICATION) },
+                    onOpenBusiness = { navController.navigate(Routes.BUSINESS) },
+                    onOpenProfile = { navController.navigate(Routes.PROFILE) }
                 )
             }
             composable(Routes.HISTORY) {

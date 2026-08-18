@@ -10,11 +10,14 @@ object DateTimeUtils {
 
     private val timeFormatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
     private val dateTimeFormatter = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+    private val dateFormatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
     private val currencyFormatter = DecimalFormat("0.##")
 
     fun formatTime(epochMillis: Long): String = timeFormatter.format(Date(epochMillis))
 
     fun formatDateTime(epochMillis: Long): String = dateTimeFormatter.format(Date(epochMillis))
+
+    fun formatDate(epochMillis: Long): String = dateFormatter.format(Date(epochMillis))
 
     /** Hour of day (0..23) for a timestamp — used for the business peak-hour metric. */
     fun hourOfDay(epochMillis: Long): Int =

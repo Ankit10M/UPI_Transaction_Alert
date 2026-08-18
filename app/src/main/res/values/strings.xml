@@ -80,6 +80,35 @@
     <string name="home_recent_title">Recent Payment</string>
     <string name="home_recent_voice_played">Voice Played ✓</string>
     <string name="home_recent_empty">No payments announced yet.\nYour latest payment will appear here.</string>
+    <!-- Phase 3: Home dashboard -->
+    <string name="home_greeting">Good %1$s, %2$s</string>
+    <string name="home_greeting_morning">morning</string>
+    <string name="home_greeting_afternoon">afternoon</string>
+    <string name="home_greeting_evening">evening</string>
+    <string name="home_shop_label">%1$s</string>
+    <string name="home_today_collection">Today\'s Collection</string>
+    <string name="home_today_count">%1$d payment(s)</string>
+    <string name="home_quick_actions">Quick Actions</string>
+    <string name="home_quick_history">Payment History</string>
+    <string name="home_quick_verify">Verify Payment</string>
+    <string name="home_quick_business">Business Summary</string>
+    <string name="home_quick_voice">Voice Settings</string>
+    <string name="home_voice_card_title">Voice Alert</string>
+    <string name="home_voice_card_on">Voice Alerts ON</string>
+    <string name="home_voice_card_on_desc">Payments will be announced</string>
+    <string name="home_voice_card_off">Voice Alerts OFF</string>
+    <string name="home_voice_card_off_desc">Payments are still being recorded</string>
+    <string name="home_permission_card_title">Permission Health</string>
+    <string name="home_permission_notification">Notification Access</string>
+    <string name="home_permission_notification_desc">Reads payment notifications from UPI apps</string>
+    <string name="home_permission_notification_ok">Connected</string>
+    <string name="home_permission_notification_missing">Not granted</string>
+    <string name="home_permission_notification_action">Open Settings</string>
+    <string name="home_permission_battery">Battery Optimization</string>
+    <string name="home_permission_battery_desc">Keeps payment detection reliable</string>
+    <string name="home_permission_battery_ok">Exempted</string>
+    <string name="home_permission_battery_missing">Restricted</string>
+    <string name="home_permission_battery_action">Request Exemption</string>
     <string name="home_activity_title">Today\'s Activity</string>
     <string name="home_activity_announced">Payments announced</string>
     <string name="home_activity_missed">Missed payments</string>
@@ -91,9 +120,9 @@
     <string name="history_announced">Announced</string>
     <string name="history_not_announced">Not announced</string>
     <string name="history_replay">Replay Voice</string>
-    <string name="history_empty">No payments yet</string>
+    <string name="history_empty">No payments recorded yet</string>
     <string name="unknown_sender">Unknown</string>
-    <string name="history_empty_check">Make sure Notification Access is granted, then wait for your next UPI payment.</string>
+    <string name="history_empty_check">Once a customer pays via UPI, it will appear here automatically. Make sure Notification Access is granted in Settings.</string>
 
     <string name="dashboard_title">Home</string>
 
@@ -159,8 +188,8 @@
     <string name="verification_time_label">Time</string>
 
     <!-- Feature 2: Business summary -->
-    <string name="business_empty_title">No sales yet today</string>
-    <string name="business_empty_body">Your daily collection, average payment and peak hour will appear here once payments start coming in.</string>
+    <string name="business_empty_title">No sales recorded today</string>
+    <string name="business_empty_body">Your daily collection, average payment, and peak hour will appear here as soon as payments come in. Keep ShoutPay running in the background.</string>
     <string name="business_today_collection">Today\'s Collection</string>
     <string name="business_payments">Payments</string>
     <string name="business_average">Average</string>
@@ -187,4 +216,8 @@
     <string name="profile_upgrade">Upgrade</string>
     <string name="about_shoutpay">About ShoutPay</string>
     <string name="about_body">ShoutPay v%1$s\n\nA merchant payment assistant — hear every UPI payment the moment it arrives, verify payments instantly, and track your daily collections. Fully offline, your data never leaves your device.</string>
+
+    <!-- Phase 3: Profile -->
+    <string name="profile_member_since">Member since %1$s</string>
+    <string name="profile_shop_not_set">Shop name not set</string>
 </resources>
