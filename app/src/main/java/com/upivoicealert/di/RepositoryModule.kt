@@ -1,5 +1,7 @@
 package com.upivoicealert.di
 
+import com.upivoicealert.data.datastore.UserProfileStore
+import com.upivoicealert.data.datastore.SettingsDataStore
 import com.upivoicealert.data.repository.PaymentVerificationRepositoryImpl
 import com.upivoicealert.data.repository.ServiceStateRepositoryImpl
 import com.upivoicealert.data.repository.SettingsRepositoryImpl
@@ -43,6 +45,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindUserRepository(impl: UserRepositoryImpl): UserRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindUserProfileStore(impl: SettingsDataStore): UserProfileStore
 
     @Binds
     @Singleton

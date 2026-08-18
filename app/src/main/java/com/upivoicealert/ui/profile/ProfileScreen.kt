@@ -105,11 +105,17 @@ fun ProfileScreen(
         )
         Spacer(Modifier.height(16.dp))
 
-        // ─── Profile information (name / shop name / phone) ───────────────
+        // ─── Business Profile (shop name / owner / phone / Merchant ID) ────
+        Text(
+            text = stringResource(R.string.profile_business_profile),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
         ProfileInfoCard(
             name = user?.name.orEmpty().ifBlank { viewModel.userName.value },
             shopName = user?.shopName.orEmpty().ifBlank { stringResource(R.string.profile_shop_not_set) },
             phone = user?.phoneNumber.orEmpty().ifBlank { mobileNumber },
+            merchantId = user?.merchantId.orEmpty(),
             onEdit = { showEditProfile = true }
         )
         // Member since

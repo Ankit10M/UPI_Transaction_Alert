@@ -20,7 +20,7 @@ private val Context.settingsDataStore: androidx.datastore.core.DataStore<Prefere
 @Singleton
 class SettingsDataStore @Inject constructor(
     @ApplicationContext private val context: Context
-) {
+) : UserProfileStore {
 
     private object Keys {
         val VOICE_ENABLED = booleanPreferencesKey("voice_enabled")
@@ -32,10 +32,11 @@ class SettingsDataStore @Inject constructor(
         val MOBILE_NUMBER = stringPreferencesKey("mobile_number")
         val USER_NAME = stringPreferencesKey("user_name")
 
-        // Merchant account (Feature 5): local user id + creation time are
-        // generated once on first profile save and kept stable (future Firebase
-        // OTP would replace the local id with the Firebase UID).
-        val USER_ID = stringPreferencesKey("user_id")
+        // Merchant account: the permanent local identity (SP-XXXXXX) and
+        // creation time are generated once on first access and kept stable.
+        // Legacy pre-Phase-4 installs may hold an unused "user_id" (UUID) key
+        // in the prefs file — it is orphaned, never read or written again.
+        val MERCHANT_ID = stringPreferencesKey("merchant_id")
         val USER_CREATED_AT = longPreferencesKey("user_created_at")
         val SHOP_NAME = stringPreferencesKey("shop_name")
 
@@ -58,11 +59,11 @@ class SettingsDataStore @Inject constructor(
     val debugModeEnabled: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.DEBUG_MODE] ?: false }
     val hasAcceptedPrivacyDisclosure: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.HAS_ACCEPTED] ?: false }
     val ttsFallbackOccurred: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.TTS_FALLBACK] ?: false }
-    val mobileNumber: Flow<String> = context.settingsDataStore.data.map { it[Keys.MOBILE_NUMBER] ?: "" }
-    val userName: Flow<String> = context.settingsDataStore.data.map { it[Keys.USER_NAME] ?: "" }
-    val userId: Flow<String> = context.settingsDataStore.data.map { it[Keys.USER_ID] ?: "" }
-    val userCreatedAt: Flow<Long> = context.settingsDataStore.data.map { it[Keys.USER_CREATED_AT] ?: 0L }
-    val shopName: Flow<String> = context.settingsDataStore.data.map { it[Keys.SHOP_NAME] ?: "" }
+    override val mobileNumber: Flow<String> = context.settingsDataStore.data.map { it[Keys.MOBILE_NUMBER] ?: "" }
+    override val userName: Flow<String> = context.settingsDataStore.data.map { it[Keys.USER_NAME] ?: "" }
+    override val merchantId: Flow<String> = context.settingsDataStore.data.map { it[Keys.MERCHANT_ID] ?: "" }
+    override val userCreatedAt: Flow<Long> = context.settingsDataStore.data.map { it[Keys.USER_CREATED_AT] ?: 0L }
+    override val shopName: Flow<String> = context.settingsDataStore.data.map { it[Keys.SHOP_NAME] ?: "" }
     val monitoringEnabled: Flow<Boolean> = context.settingsDataStore.data.map { it[Keys.MONITORING_ENABLED] ?: false }
 
     suspend fun setVoiceEnabled(enabled: Boolean) {
@@ -89,23 +90,23 @@ class SettingsDataStore @Inject constructor(
         context.settingsDataStore.edit { it[Keys.TTS_FALLBACK] = occurred }
     }
 
-    suspend fun setMobileNumber(number: String) {
+    override suspend fun setMobileNumber(number: String) {
         context.settingsDataStore.edit { it[Keys.MOBILE_NUMBER] = number }
     }
 
-    suspend fun setUserName(name: String) {
+    override suspend fun setUserName(name: String) {
         context.settingsDataStore.edit { it[Keys.USER_NAME] = name }
     }
 
-    suspend fun setUserId(id: String) {
-        context.settingsDataStore.edit { it[Keys.USER_ID] = id }
+    override suspend fun setMerchantId(id: String) {
+        context.settingsDataStore.edit { it[Keys.MERCHANT_ID] = id }
     }
 
-    suspend fun setUserCreatedAt(createdAt: Long) {
+    override suspend fun setUserCreatedAt(createdAt: Long) {
         context.settingsDataStore.edit { it[Keys.USER_CREATED_AT] = createdAt }
     }
 
-    suspend fun setShopName(shopName: String) {
+    override suspend fun setShopName(shopName: String) {
         context.settingsDataStore.edit { it[Keys.SHOP_NAME] = shopName }
     }
 

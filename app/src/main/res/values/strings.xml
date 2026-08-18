@@ -220,4 +220,8 @@
     <!-- Phase 3: Profile -->
     <string name="profile_member_since">Member since %1$s</string>
     <string name="profile_shop_not_set">Shop name not set</string>
+
+    <!-- Phase 4: Merchant identity -->
+    <string name="profile_business_profile">Business Profile</string>
+    <string name="profile_merchant_id">Merchant ID: %1$s</string>
 </resources>
