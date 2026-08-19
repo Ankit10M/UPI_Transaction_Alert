@@ -1,0 +1,7 @@
+node_modules/
+.env
+.neon
+coverage/
+dist/
+build/
+*.log
