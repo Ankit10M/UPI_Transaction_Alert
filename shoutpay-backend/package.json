@@ -6,37 +6,38 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest",
-    "build": "prisma generate && npm run lint",
-    "lint": "eslint src/",
-    "typecheck": "tsc"
+    "build": "prisma generate",
+    "lint": "eslint src/"
   },
-  "keywords": ["shoutpay", "backend", "express", "prisma", "postgresql"],
+  "keywords": [
+    "shoutpay",
+    "backend",
+    "express",
+    "prisma",
+    "postgresql"
+  ],
   "author": "ShoutPay Team",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "helmet": "^7.0.0",
-    "morgan": "^1.0.4",
-    "joi": "^17.9.2",
-    "express-rate-limit": "^6.7.0",
-    "jsonwebtoken": "^9.0.1",
-    "bcrypt": "^5.1.0",
-    "prisma": "^5.10.0",
     "@prisma/client": "^5.10.0",
+    "bcrypt": "^5.1.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    " winston": "^3.10.0",
-    "nodemon": "^3.0.1",
-    "typescript": "^5.3.2",
-    "@types/express": "^4.18.2",
-    "@types/node": "^20.10.2"
+    "express": "^4.18.2",
+    "express-rate-limit": "^6.7.0",
+    "helmet": "^7.0.0",
+    "joi": "^17.9.2",
+    "jsonwebtoken": "^9.0.1",
+    "morgan": "^1.10.0",
+    "prisma": "^5.10.0",
+    "razorpay": "^2.9.8",
+    "winston": "^3.10.0"
   },
   "devDependencies": {
-    "jest": "^29.7.0",
-    "ts-jest": "^29.1.1",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.0.0",
-    "prettier": "^3.2.4",
-    "nodemon": "^3.0.1"
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.1",
+    "prettier": "^3.2.4"
   }
 }

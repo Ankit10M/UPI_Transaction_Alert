@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum MerchantStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum DeviceActiveStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum TransactionType {
+  RECEIVED
+  SENT
+  REFUND
+  FAILED
+  PENDING
+}
+
+enum TransactionStatus {
+  SUCCESS
+  FAILED
+  PENDING
+}
+
+enum SubscriptionPlan {
+  FREE_TRIAL
+  PRO
+  BUSINESS
+}
+
+enum SubscriptionStatus {
+  FREE_TRIAL
+  ACTIVE
+  EXPIRED
+}
+
+model Merchant {
+  id          String         @id @default(cuid())
+  merchantId  String         @unique
+  firebaseUid String?        @unique
+  ownerName   String
+  shopName    String
+  phoneNumber String
+  status      MerchantStatus @default(ACTIVE)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  devices       Device[]
+  transactions  Transaction[]
+  subscriptions Subscription[]
+
+  @@map("merchants")
+}
+
+model Device {
+  id             String             @id @default(cuid())
+  deviceId       String             @unique
+  merchantId     String
+  deviceName     String?
+  androidVersion String?
+  lastSyncTime   DateTime?
+  activeStatus   DeviceActiveStatus @default(ACTIVE)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  merchant     Merchant      @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  transactions Transaction[]
+
+  @@index([merchantId])
+  @@map("devices")
+}
+
+model Transaction {
+  id               String            @id @default(cuid())
+  transactionId    String
+  merchantId       String
+  deviceId         String
+  amount           Decimal           @db.Decimal(12, 2)
+  senderName       String
+  upiApp           String
+  referenceId      String?
+  type             TransactionType
+  status           TransactionStatus
+  dedupFingerprint String?
+  createdAtDevice  DateTime
+  syncedAt         DateTime          @default(now())
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deletedAt        DateTime?
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  device   Device   @relation(fields: [deviceId], references: [id], onDelete: Restrict)
+
+  @@unique([deviceId, transactionId])
+  @@index([merchantId])
+  @@index([merchantId, createdAtDevice])
+  @@index([merchantId, deviceId, createdAtDevice])
+  @@index([referenceId])
+  @@index([merchantId, deviceId, dedupFingerprint])
+  @@map("transactions")
+}
+
+model Subscription {
+  id         String             @id @default(cuid())
+  merchantId String
+  plan       SubscriptionPlan
+  status     SubscriptionStatus
+  startDate  DateTime
+  endDate    DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+
+  @@index([merchantId])
+  @@index([merchantId, status])
+  @@map("subscriptions")
+}

@@ -2,8 +2,9 @@
 
 const path = require('path');
 
-// Load environment variables from .env.example
-require('dotenv').config({ path: path.join(__dirname, '../.env.example') });
+// Load the real local .env file (gitignored) for runtime configuration.
+// .env.example is a template/documentation file only and must not contain real credentials.
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const app = require('./app');
 const config = require('./config/config');
