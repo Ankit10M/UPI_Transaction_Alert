@@ -1,9 +1,12 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -41,6 +44,20 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+
+    val localProperties = Properties().apply {
+        val file = rootProject.file("local.properties")
+        if (file.exists()) file.inputStream().use { load(it) }
+    }
+    buildTypes {
+        debug {
+            buildConfigField("String", "BASE_URL", "\"${localProperties.getProperty("SHOUTPAY_DEBUG_BASE_URL") ?: "https://api.shoutpay.in/api/"}\"")
+        }
+        release {
+            buildConfigField("String", "BASE_URL", "\"https://api.shoutpay.in/api/\"")
+        }
     }
 
     testOptions {
@@ -85,6 +102,13 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
 
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.androidx.security.crypto)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.okhttp)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

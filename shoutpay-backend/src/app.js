@@ -7,6 +7,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const Database = require('./database/database');
 const config = require('./config/config');
+const { routerFor: authRouterFor, merchantRouterFor } = require('./auth/router');
 
 const app = express();
 
@@ -32,6 +33,8 @@ app.use('/api/', limiter);
 
 // Initialize database
 const database = new Database();
+app.use('/api/auth', authRouterFor(database.client));
+app.use('/api/merchant', merchantRouterFor(database.client));
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
@@ -48,7 +51,7 @@ app.get('/health', async (req, res) => {
     res.status(500).json({
       status: 'error',
       service: 'shoutpay-backend',
-      error: error.message,
+      error: config.NODE_ENV === 'production' ? 'Service unavailable' : error.message,
       timestamp: new Date().toISOString()
     });
   }
@@ -56,15 +59,13 @@ app.get('/health', async (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({
-    error: {
-      message: err.message || 'Internal Server Error',
-      status: err.status || 500,
-      timestamp: new Date().toISOString(),
-      path: req.path
-    }
-  });
+  const status = Number.isInteger(err.status) ? err.status : 500;
+  if (config.NODE_ENV === 'production') {
+    console.error('Request failed', { method: req.method, path: req.path, status, errorName: err.name });
+    return res.status(status).json({ error: { code: status >= 500 ? 'INTERNAL_SERVER_ERROR' : 'REQUEST_FAILED' } });
+  }
+  console.error(err);
+  return res.status(status).json({ error: { code: err.code || 'REQUEST_FAILED', message: err.message } });
 });
 
 // 404 handler

@@ -13,7 +13,7 @@ class Database {
       console.log('Connected to PostgreSQL database');
       return true;
     } catch (error) {
-      console.error('Database connection error:', error);
+      console.error('Database connection error', { errorName: error.name, errorCode: error.code });
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class Database {
       await this.client.$disconnect();
       console.log('Disconnected from PostgreSQL database');
     } catch (error) {
-      console.error('Database disconnection error:', error);
+      console.error('Database disconnection error', { errorName: error.name, errorCode: error.code });
     }
   }
 
@@ -36,7 +36,7 @@ class Database {
   }
 
   async query(sql, params = []) {
-    return await this.client.$queryRaw(sql, params);
+    return this.client.$queryRawUnsafe(sql, ...params);
   }
 
   async transaction(callback) {

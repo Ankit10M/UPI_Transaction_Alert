@@ -42,6 +42,7 @@ import com.upivoicealert.ui.onboarding.VoiceTestScreen
 import com.upivoicealert.ui.pricing.PricingScreen
 import com.upivoicealert.ui.profile.ProfileScreen
 import com.upivoicealert.ui.verification.VerificationScreen
+import com.upivoicealert.ui.auth.OtpScreen
 
 object Routes {
     const val HOME = "home"
@@ -58,6 +59,7 @@ object Routes {
     const val PERMISSION_SETUP = "permissionSetup"
     const val VOICE_TEST = "voiceTest"
     const val READY = "ready"
+    const val OTP = "otp"
 }
 
 private data class BottomTab(
@@ -162,6 +164,7 @@ fun MainNavHost() {
             composable(Routes.UNPARSED) {
                 UnparsedNotificationsScreen(onBack = { navController.popBackStack() })
             }
+            composable(Routes.OTP) { OtpScreen() }
         }
     }
 }

@@ -9,6 +9,8 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const app = require('./app');
 const config = require('./config/config');
 
+config.assertAuthConfiguration();
+
 const server = app.listen(config.PORT, () => {
   console.log('ShoutPay Backend starting...');
   console.log(`Server running on port ${config.PORT}`);

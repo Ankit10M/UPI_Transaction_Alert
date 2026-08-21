@@ -38,6 +38,7 @@ secrets.properties
 *.tmp
 *.temp
 
+google-services.json
 # OS
 Thumbs.db
 desktop.ini
@@ -54,3 +55,6 @@ libs/
 
 # Design files
 app_design/
+
+# md files
+FIREBASE_COMPATIBILITY_REPORT.md

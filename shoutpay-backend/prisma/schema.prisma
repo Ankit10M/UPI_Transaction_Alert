@@ -58,6 +58,7 @@ model Merchant {
   devices       Device[]
   transactions  Transaction[]
   subscriptions Subscription[]
+  authSessions  AuthSession[]
 
   @@map("merchants")
 }
@@ -75,9 +76,49 @@ model Device {
 
   merchant     Merchant      @relation(fields: [merchantId], references: [id], onDelete: Restrict)
   transactions Transaction[]
+  authSessions AuthSession[]
 
   @@index([merchantId])
   @@map("devices")
+}
+
+model AuthSession {
+  id            String         @id @default(cuid())
+  merchantId    String
+  deviceId      String
+  tokenFamilyId String
+  expiresAt     DateTime
+  lastUsedAt    DateTime?
+  revokedAt     DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  merchant      Merchant       @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  device        Device         @relation(fields: [deviceId], references: [id], onDelete: Restrict)
+  refreshTokens RefreshToken[]
+
+  @@index([merchantId])
+  @@index([deviceId])
+  @@index([tokenFamilyId])
+  @@map("auth_sessions")
+}
+
+model RefreshToken {
+  id            String      @id @default(cuid())
+  sessionId     String
+  tokenFamilyId String
+  tokenHash     String      @unique
+  issuedAt      DateTime    @default(now())
+  expiresAt     DateTime
+  usedAt        DateTime?
+  revokedAt     DateTime?
+  createdAt     DateTime    @default(now())
+
+  session       AuthSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([tokenFamilyId])
+  @@map("refresh_tokens")
 }
 
 model Transaction {
