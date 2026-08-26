@@ -4,15 +4,17 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.upivoicealert.data.sync.SyncQueueEntity
 
 @Database(
-    entities = [TransactionEntity::class, UnparsedNotificationEntity::class],
-    version = 4,
+    entities = [TransactionEntity::class, UnparsedNotificationEntity::class, SyncQueueEntity::class],
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun unparsedNotificationDao(): UnparsedNotificationDao
+    abstract fun syncQueueDao(): com.upivoicealert.data.sync.SyncQueueDao
 
     companion object {
         /**
@@ -68,6 +70,30 @@ abstract class AppDatabase : RoomDatabase() {
                     "UPDATE transactions SET originalNotificationText = rawNotification, " +
                         "cleanedNotificationText = rawNotification WHERE originalNotificationText = ''"
                 )
+            }
+        }
+
+        /**
+         * v4 -> v5: sync queue foundation for future cloud sync (Phase 5.4).
+         * Creates new table sync_queue; no modification to existing transaction tables.
+         */
+        val MIGRATION_4_5: Migration = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS sync_queue (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        entityType TEXT NOT NULL,
+                        entityId TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        retryCount INTEGER NOT NULL DEFAULT 0,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_sync_queue_status ON sync_queue(status)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_sync_queue_entityType ON sync_queue(entityType)")
             }
         }
     }

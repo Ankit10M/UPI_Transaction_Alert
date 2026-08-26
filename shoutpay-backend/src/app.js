@@ -7,7 +7,9 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const Database = require('./database/database');
 const config = require('./config/config');
-const { routerFor: authRouterFor, merchantRouterFor } = require('./auth/router');
+const { routerFor: authRouterFor } = require('./auth/router');
+const { merchantRouterFor } = require('./modules/merchant/router');
+const { devicesRouterFor } = require('./modules/devices/router');
 
 const app = express();
 
@@ -34,6 +36,7 @@ app.use('/api/', limiter);
 // Initialize database
 const database = new Database();
 app.use('/api/auth', authRouterFor(database.client));
+app.use('/api/auth/devices', devicesRouterFor(database.client));
 app.use('/api/merchant', merchantRouterFor(database.client));
 
 // Health check endpoint

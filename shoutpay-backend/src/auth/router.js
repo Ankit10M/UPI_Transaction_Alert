@@ -116,12 +116,9 @@ function routerFor(prisma) {
 }
 
 function merchantRouterFor(prisma) {
-  const router = express.Router();
-  router.patch('/profile', requireAuth, async (req, res, next) => {
-    const { error, value } = profileSchema.validate(req.body, { abortEarly: true, stripUnknown: true }); if (error) return apiError(res, 400, 'MALFORMED_REQUEST');
-    try { const merchant = await prisma.merchant.update({ where: { merchantId: req.auth.merchantId }, data: value }); return res.json({ merchant: publicMerchant(merchant) }); } catch (error) { return next(error); }
-  });
-  return router;
+  // Delegate to the dedicated merchant module (source of truth).
+  // Kept here for backward compatibility with existing imports (require('./auth/router').merchantRouterFor).
+  return require('../modules/merchant/router').merchantRouterFor(prisma);
 }
 
 module.exports = { routerFor, merchantRouterFor, serializableRefresh };

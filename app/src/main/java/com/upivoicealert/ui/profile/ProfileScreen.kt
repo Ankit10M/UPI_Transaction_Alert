@@ -50,42 +50,58 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.upivoicealert.R
 import com.upivoicealert.domain.model.SubscriptionStatus
 import com.upivoicealert.domain.model.VoiceLanguage
+import com.upivoicealert.ui.components.DeviceCard
 import com.upivoicealert.ui.components.PermissionSettingCard
 import com.upivoicealert.ui.components.ProfileInfoCard
 import com.upivoicealert.ui.components.SettingCard
 import com.upivoicealert.ui.components.ShoutPayButton
 import com.upivoicealert.ui.components.ToggleSettingCard
+import com.upivoicealert.ui.security.SecurityUiState
+import com.upivoicealert.ui.security.SecurityViewModel
 import com.upivoicealert.ui.theme.ShoutPayIndigo
 import com.upivoicealert.ui.theme.SuccessGreen
 import com.upivoicealert.utils.DateTimeUtils
 import com.upivoicealert.utils.PackageNames
+import java.time.Instant
 
 @Composable
 fun ProfileScreen(
     onOpenDebug: () -> Unit,
     onOpenPricing: () -> Unit,
-    viewModel: ProfileViewModel = hiltViewModel()
+    viewModel: ProfileViewModel = hiltViewModel(),
+    merchantProfileViewModel: MerchantProfileViewModel = hiltViewModel(),
+    securityViewModel: SecurityViewModel = hiltViewModel()
 ) {
     val voiceEnabled by viewModel.voiceEnabled.collectAsStateWithLifecycle()
     val language by viewModel.language.collectAsStateWithLifecycle()
     val speechRate by viewModel.speechRate.collectAsStateWithLifecycle()
     val ttsFallbackOccurred by viewModel.ttsFallbackOccurred.collectAsStateWithLifecycle()
-    val user by viewModel.user.collectAsStateWithLifecycle()
-    val mobileNumber by viewModel.mobileNumber.collectAsStateWithLifecycle()
     val subscription by viewModel.subscription.collectAsStateWithLifecycle()
     val listenerGranted by viewModel.listenerGranted.collectAsStateWithLifecycle()
     val batteryIgnored by viewModel.batteryIgnored.collectAsStateWithLifecycle()
     val debugMode by viewModel.debugMode.collectAsStateWithLifecycle()
 
+    val merchantState by merchantProfileViewModel.uiState.collectAsStateWithLifecycle()
+    val securityState by securityViewModel.uiState.collectAsStateWithLifecycle()
+
     var showEditProfile by remember { mutableStateOf(false) }
     var showPrivacy by remember { mutableStateOf(false) }
     var showAbout by remember { mutableStateOf(false) }
+    var pendingLogoutDeviceId by remember { mutableStateOf<String?>(null) }
+    var showLogoutOthersConfirm by remember { mutableStateOf(false) }
+
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        merchantProfileViewModel.loadProfile()
+        securityViewModel.loadDevices()
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 viewModel.refreshPermissionStatus()
+                merchantProfileViewModel.loadProfile()
+                securityViewModel.loadDevices()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -105,27 +121,123 @@ fun ProfileScreen(
         )
         Spacer(Modifier.height(16.dp))
 
-        // ─── Business Profile (shop name / owner / phone / Merchant ID) ────
+        // ─── Business Profile (backend source of truth) ─────────────────────
         Text(
             text = stringResource(R.string.profile_business_profile),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(bottom = 8.dp)
         )
-        ProfileInfoCard(
-            name = user?.name.orEmpty().ifBlank { viewModel.userName.value },
-            shopName = user?.shopName.orEmpty().ifBlank { stringResource(R.string.profile_shop_not_set) },
-            phone = user?.phoneNumber.orEmpty().ifBlank { mobileNumber },
-            merchantId = user?.merchantId.orEmpty(),
-            onEdit = { showEditProfile = true }
-        )
-        // Member since
-        user?.createdAt?.takeIf { it > 0 }?.let { createdAt ->
-            Text(
-                text = stringResource(R.string.profile_member_since, DateTimeUtils.formatDate(createdAt)),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp, start = 4.dp)
-            )
+        when (val state = merchantState) {
+            is MerchantProfileUiState.Loading -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        androidx.compose.material3.CircularProgressIndicator()
+                        Text(
+                            text = "Loading profile...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(top = 12.dp)
+                        )
+                    }
+                }
+            }
+            is MerchantProfileUiState.Success -> {
+                val profile = state.profile
+                ProfileInfoCard(
+                    name = profile.ownerName.orEmpty().ifBlank { stringResource(R.string.profile_default_name) },
+                    shopName = profile.shopName.orEmpty().ifBlank { stringResource(R.string.profile_shop_not_set) },
+                    phone = profile.phoneNumber,
+                    merchantId = profile.merchantId,
+                    onEdit = { showEditProfile = true }
+                )
+                profile.createdAt.takeIf { it.isNotBlank() }?.let { iso ->
+                    val epoch = runCatching { Instant.parse(iso).toEpochMilli() }.getOrNull()
+                    if (epoch != null && epoch > 0) {
+                        Text(
+                            text = stringResource(R.string.profile_member_since, DateTimeUtils.formatDate(epoch)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 8.dp, start = 4.dp)
+                        )
+                    }
+                }
+            }
+            is MerchantProfileUiState.Offline -> {
+                val profile = state.profile
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Text(
+                        text = "Offline — showing cached profile",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    )
+                }
+                ProfileInfoCard(
+                    name = profile.ownerName.orEmpty().ifBlank { stringResource(R.string.profile_default_name) },
+                    shopName = profile.shopName.orEmpty().ifBlank { stringResource(R.string.profile_shop_not_set) },
+                    phone = profile.phoneNumber,
+                    merchantId = profile.merchantId,
+                    onEdit = { showEditProfile = true }
+                )
+                profile.createdAt.takeIf { it.isNotBlank() }?.let { iso ->
+                    val epoch = runCatching { Instant.parse(iso).toEpochMilli() }.getOrNull()
+                    if (epoch != null && epoch > 0) {
+                        Text(
+                            text = stringResource(R.string.profile_member_since, DateTimeUtils.formatDate(epoch)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 8.dp, start = 4.dp)
+                        )
+                    }
+                }
+            }
+            is MerchantProfileUiState.Error -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(
+                            text = state.message,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        TextButton(onClick = { merchantProfileViewModel.loadProfile() }) {
+                            Text("Retry")
+                        }
+                    }
+                }
+            }
+            is MerchantProfileUiState.SessionExpired -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Session expired — please login again",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        TextButton(onClick = { merchantProfileViewModel.loadProfile() }) {
+                            Text("Retry")
+                        }
+                    }
+                }
+            }
         }
         Spacer(Modifier.height(20.dp))
 
@@ -307,6 +419,118 @@ fun ProfileScreen(
         }
         Spacer(Modifier.height(14.dp))
 
+        // ─── Security — Account Security (Phase 5.3) ──────────────────────
+        Text(
+            text = "Security",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+        Text(
+            text = "Manage devices logged into your account.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
+        when (val state = securityState) {
+            is SecurityUiState.Loading -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        androidx.compose.material3.CircularProgressIndicator()
+                        Text(
+                            text = "Loading devices...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(top = 12.dp)
+                        )
+                    }
+                }
+            }
+            is SecurityUiState.Success -> {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    state.devices.forEach { device ->
+                        DeviceCard(
+                            device = device,
+                            onLogout = if (device.active) null else {
+                                { pendingLogoutDeviceId = device.deviceId }
+                            }
+                        )
+                    }
+                    if (state.devices.size > 1) {
+                        OutlinedButton(
+                            onClick = { showLogoutOthersConfirm = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Logout Other Devices")
+                        }
+                    }
+                }
+            }
+            is SecurityUiState.Empty -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Text(
+                        text = "No devices found",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+            is SecurityUiState.Error -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(
+                            text = state.message.ifBlank { "Unable to load devices" },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        TextButton(onClick = { securityViewModel.loadDevices() }) {
+                            Text("Retry")
+                        }
+                    }
+                }
+            }
+            is SecurityUiState.SessionExpired -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Your session has expired.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Text(
+                            text = "Please login again to manage devices.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                        TextButton(onClick = { securityViewModel.loadDevices() }) {
+                            Text("Login Again")
+                        }
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+
         // ─── Legal ─────────────────────────────────────────────────────────
         SettingCard(
             icon = Icons.Filled.PrivacyTip,
@@ -342,13 +566,19 @@ fun ProfileScreen(
     }
 
     if (showEditProfile) {
+        val current = when (val s = merchantState) {
+            is MerchantProfileUiState.Success -> s.profile
+            is MerchantProfileUiState.Offline -> s.profile
+            else -> null
+        }
         EditProfileDialog(
-            name = user?.name.orEmpty().ifBlank { viewModel.userName.value },
-            shopName = user?.shopName.orEmpty(),
-            phone = user?.phoneNumber.orEmpty().ifBlank { mobileNumber },
+            name = current?.ownerName.orEmpty(),
+            shopName = current?.shopName.orEmpty(),
+            merchantId = current?.merchantId.orEmpty(),
+            phone = current?.phoneNumber.orEmpty(),
             onDismiss = { showEditProfile = false },
-            onSave = { newName, newShop, newPhone ->
-                viewModel.saveProfile(newName, newShop, newPhone)
+            onSave = { newName, newShop ->
+                merchantProfileViewModel.updateProfile(newName, newShop)
                 showEditProfile = false
             }
         )
@@ -372,6 +602,41 @@ fun ProfileScreen(
             text = { Text(stringResource(R.string.about_body, viewModel.appVersion)) },
             confirmButton = {
                 TextButton(onClick = { showAbout = false }) { Text(stringResource(R.string.ok)) }
+            }
+        )
+    }
+
+    if (pendingLogoutDeviceId != null) {
+        AlertDialog(
+            onDismissRequest = { pendingLogoutDeviceId = null },
+            title = { Text("Logout this device?") },
+            text = { Text("This device will no longer access your account.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val id = pendingLogoutDeviceId
+                    pendingLogoutDeviceId = null
+                    if (id != null) securityViewModel.logoutDevice(id)
+                }) { Text("Logout") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingLogoutDeviceId = null }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (showLogoutOthersConfirm) {
+        AlertDialog(
+            onDismissRequest = { showLogoutOthersConfirm = false },
+            title = { Text("Logout all other devices?") },
+            text = { Text("Your current device will remain active.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showLogoutOthersConfirm = false
+                    securityViewModel.logoutOtherDevices()
+                }) { Text("Logout") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutOthersConfirm = false }) { Text("Cancel") }
             }
         )
     }
@@ -403,13 +668,13 @@ private fun ConnectedAppRow(name: String) {
 private fun EditProfileDialog(
     name: String,
     shopName: String,
+    merchantId: String,
     phone: String,
     onDismiss: () -> Unit,
-    onSave: (String, String, String) -> Unit
+    onSave: (String, String) -> Unit
 ) {
     var nameValue by remember { mutableStateOf(name) }
     var shopValue by remember { mutableStateOf(shopName) }
-    var phoneValue by remember { mutableStateOf(phone) }
     var nameError by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -438,11 +703,23 @@ private fun EditProfileDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+                // Read-only fields: Merchant ID and Phone Number (immutable)
                 OutlinedTextField(
-                    value = phoneValue,
-                    onValueChange = { phoneValue = it.filter { c -> c.isDigit() }.take(10) },
+                    value = merchantId,
+                    onValueChange = {},
+                    label = { Text("Merchant ID") },
+                    singleLine = true,
+                    readOnly = true,
+                    enabled = false,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = {},
                     label = { Text(stringResource(R.string.profile_phone_hint)) },
                     singleLine = true,
+                    readOnly = true,
+                    enabled = false,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -450,7 +727,7 @@ private fun EditProfileDialog(
         confirmButton = {
             TextButton(onClick = {
                 if (nameValue.isBlank()) nameError = true
-                else onSave(nameValue.trim(), shopValue.trim(), phoneValue.trim())
+                else onSave(nameValue.trim(), shopValue.trim())
             }) {
                 Text(stringResource(R.string.profile_save))
             }

@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.upivoicealert.data.database.AppDatabase
 import com.upivoicealert.data.database.TransactionDao
 import com.upivoicealert.data.database.UnparsedNotificationDao
+import com.upivoicealert.data.sync.SyncQueueDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,7 +24,8 @@ object DatabaseModule {
             .addMigrations(
                 AppDatabase.MIGRATION_1_2,
                 AppDatabase.MIGRATION_2_3,
-                AppDatabase.MIGRATION_3_4
+                AppDatabase.MIGRATION_3_4,
+                AppDatabase.MIGRATION_4_5
             )
             .build()
 
@@ -32,4 +34,7 @@ object DatabaseModule {
 
     @Provides
     fun provideUnparsedNotificationDao(db: AppDatabase): UnparsedNotificationDao = db.unparsedNotificationDao()
+
+    @Provides
+    fun provideSyncQueueDao(db: AppDatabase): SyncQueueDao = db.syncQueueDao()
 }

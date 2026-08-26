@@ -8,12 +8,14 @@ import com.upivoicealert.data.repository.SettingsRepositoryImpl
 import com.upivoicealert.data.repository.SubscriptionRepositoryImpl
 import com.upivoicealert.data.repository.TransactionRepositoryImpl
 import com.upivoicealert.data.repository.UserRepositoryImpl
+import com.upivoicealert.data.sync.SyncQueueRepositoryImpl
 import com.upivoicealert.domain.repository.PaymentVerificationRepository
 import com.upivoicealert.domain.repository.ServiceStateRepository
 import com.upivoicealert.domain.repository.SettingsRepository
 import com.upivoicealert.domain.repository.SubscriptionRepository
 import com.upivoicealert.domain.repository.TransactionRepository
 import com.upivoicealert.domain.repository.UserRepository
+import com.upivoicealert.domain.sync.SyncQueueRepository
 import com.upivoicealert.voice.VoiceAnnouncement
 import com.upivoicealert.voice.VoiceAnnouncementEngine
 import dagger.Binds
@@ -49,6 +51,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindUserProfileStore(impl: SettingsDataStore): UserProfileStore
+
+    @Binds
+    @Singleton
+    abstract fun bindSyncQueueRepository(impl: SyncQueueRepositoryImpl): SyncQueueRepository
 
     @Binds
     @Singleton
