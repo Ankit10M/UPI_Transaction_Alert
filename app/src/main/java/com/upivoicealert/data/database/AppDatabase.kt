@@ -8,7 +8,7 @@ import com.upivoicealert.data.sync.SyncQueueEntity
 
 @Database(
     entities = [TransactionEntity::class, UnparsedNotificationEntity::class, SyncQueueEntity::class],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -94,6 +94,22 @@ abstract class AppDatabase : RoomDatabase() {
                 )
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_sync_queue_status ON sync_queue(status)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_sync_queue_entityType ON sync_queue(entityType)")
+            }
+        }
+
+        /**
+         * v5 -> v6: cloud sync identifier for transactions (Phase 6.2).
+         * Adds stable transactionUuid column for sync queue linkage.
+         * Preserves existing transactions: backfills transactionUuid with existing id
+         * (stable, already unique), then enforces NOT NULL and index.
+         * No sync_queue changes.
+         */
+        val MIGRATION_5_6: Migration = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE transactions ADD COLUMN transactionUuid TEXT NOT NULL DEFAULT ''")
+                // Backfill legacy rows with their primary key (stable UUID already)
+                db.execSQL("UPDATE transactions SET transactionUuid = id WHERE transactionUuid = ''")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_transactionUuid ON transactions(transactionUuid)")
             }
         }
     }

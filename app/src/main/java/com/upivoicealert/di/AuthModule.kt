@@ -6,6 +6,7 @@ import com.upivoicealert.data.auth.AuthSessionStore
 import com.upivoicealert.BuildConfig
 import com.upivoicealert.data.profile.MerchantProfileApi
 import com.upivoicealert.data.security.DeviceApi
+import com.upivoicealert.data.sync.TransactionSyncApi
 import com.upivoicealert.network.ApiClient
 import com.upivoicealert.network.AuthApi
 import com.upivoicealert.network.AuthInterceptor
@@ -33,4 +34,8 @@ object AuthModule {
         builder.baseUrl(BuildConfig.BASE_URL).addConverterFactory(GsonConverterFactory.create()).build().create(MerchantProfileApi::class.java)
     @Provides @Singleton fun deviceApi(builder: Retrofit.Builder): DeviceApi =
         builder.baseUrl(BuildConfig.BASE_URL).addConverterFactory(GsonConverterFactory.create()).build().create(DeviceApi::class.java)
+    @Provides @Singleton fun transactionSyncApi(builder: Retrofit.Builder): TransactionSyncApi =
+        builder.baseUrl(BuildConfig.BASE_URL).addConverterFactory(GsonConverterFactory.create()).build().create(TransactionSyncApi::class.java)
+    @Provides @Singleton fun cloudTransactionApi(builder: Retrofit.Builder): com.upivoicealert.data.cloudtransaction.CloudTransactionApi =
+        builder.baseUrl(BuildConfig.BASE_URL).addConverterFactory(GsonConverterFactory.create()).build().create(com.upivoicealert.data.cloudtransaction.CloudTransactionApi::class.java)
 }

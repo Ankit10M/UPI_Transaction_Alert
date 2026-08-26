@@ -10,10 +10,12 @@ import kotlinx.coroutines.flow.first
 private val Context.deviceIdentityDataStore by preferencesDataStore(name = "device_identity")
 
 /** Creates one ShoutPay-specific UUID v4 and persists it for this app install. */
-class DeviceIdGenerator(private val context: Context) {
+open class DeviceIdGenerator(private val context: Context) : DeviceIdProvider {
     private val deviceIdKey = stringPreferencesKey("device_id")
 
-    suspend fun getOrCreate(): String {
+    override suspend fun getDeviceId(): String = getOrCreate()
+
+    open suspend fun getOrCreate(): String {
         val existing = context.deviceIdentityDataStore.data.first()[deviceIdKey]
         if (!existing.isNullOrBlank()) return existing
 

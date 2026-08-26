@@ -73,6 +73,12 @@ interface TransactionDao {
         windowEnd: Long
     ): TransactionEntity?
 
+    @Query("SELECT * FROM transactions WHERE transactionUuid = :uuid LIMIT 1")
+    suspend fun findByTransactionUuid(uuid: String): TransactionEntity?
+
+    @Query("SELECT * FROM transactions WHERE transactionUuid IN (:uuids)")
+    suspend fun findByTransactionUuids(uuids: List<String>): List<TransactionEntity>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(entity: TransactionEntity): Long
 

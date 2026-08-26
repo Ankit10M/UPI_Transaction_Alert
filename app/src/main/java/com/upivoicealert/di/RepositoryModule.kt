@@ -16,6 +16,8 @@ import com.upivoicealert.domain.repository.SubscriptionRepository
 import com.upivoicealert.domain.repository.TransactionRepository
 import com.upivoicealert.domain.repository.UserRepository
 import com.upivoicealert.domain.sync.SyncQueueRepository
+import com.upivoicealert.utils.DeviceIdGenerator
+import com.upivoicealert.utils.DeviceIdProvider
 import com.upivoicealert.voice.VoiceAnnouncement
 import com.upivoicealert.voice.VoiceAnnouncementEngine
 import dagger.Binds
@@ -55,6 +57,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindSyncQueueRepository(impl: SyncQueueRepositoryImpl): SyncQueueRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindDeviceIdProvider(impl: DeviceIdGenerator): DeviceIdProvider
 
     @Binds
     @Singleton

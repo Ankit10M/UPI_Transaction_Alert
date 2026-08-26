@@ -13,7 +13,8 @@ import androidx.room.PrimaryKey
         // history grows. NOT unique on purpose — two legitimate same-fingerprint
         // payments must remain insertable outside the dedup time window.
         Index(value = ["transactionId"]),
-        Index(value = ["dedupFingerprint"])
+        Index(value = ["dedupFingerprint"]),
+        Index(value = ["transactionUuid"])
     ]
 )
 data class TransactionEntity(
@@ -43,5 +44,10 @@ data class TransactionEntity(
     // transaction type, written at insert time by TransactionFingerprint. NULL
     // for legacy rows migrated before v4 — those rely on reference-ID / exact-text
     // matching only. Added via MIGRATION_3_4.
-    val dedupFingerprint: String? = null
+    val dedupFingerprint: String? = null,
+    // Cloud sync identifier (schema v6): stable UUID for transaction, generated
+    // once for successful RECEIVED transactions, never regenerated, used as
+    // entityId in SyncQueue (entityType=TRANSACTION, status=PENDING).
+    // Added via MIGRATION_5_6; legacy rows backfilled with id for stability.
+    val transactionUuid: String = java.util.UUID.randomUUID().toString()
 )

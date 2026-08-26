@@ -10,6 +10,7 @@ const config = require('./config/config');
 const { routerFor: authRouterFor } = require('./auth/router');
 const { merchantRouterFor } = require('./modules/merchant/router');
 const { devicesRouterFor } = require('./modules/devices/router');
+const { transactionsRouterFor } = require('./modules/transactions/router');
 
 const app = express();
 
@@ -38,6 +39,7 @@ const database = new Database();
 app.use('/api/auth', authRouterFor(database.client));
 app.use('/api/auth/devices', devicesRouterFor(database.client));
 app.use('/api/merchant', merchantRouterFor(database.client));
+app.use('/api/transactions', transactionsRouterFor(database.client));
 
 // Health check endpoint
 app.get('/health', async (req, res) => {

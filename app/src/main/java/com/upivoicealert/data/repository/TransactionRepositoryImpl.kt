@@ -1,14 +1,22 @@
 package com.upivoicealert.data.repository
 
 import android.util.Log
+import androidx.room.withTransaction
+import com.upivoicealert.data.database.AppDatabase
 import com.upivoicealert.data.database.TransactionDao
 import com.upivoicealert.data.database.UnparsedNotificationDao
 import com.upivoicealert.data.model.toDomain
 import com.upivoicealert.data.model.toEntity
+import com.upivoicealert.data.sync.SyncQueueDao
+import com.upivoicealert.data.sync.SyncQueueEntity
 import com.upivoicealert.domain.model.Transaction
+import com.upivoicealert.domain.model.TransactionStatus
+import com.upivoicealert.domain.model.TransactionType
 import com.upivoicealert.domain.model.UnparsedNotification
 import com.upivoicealert.domain.repository.TransactionRepository
+import com.upivoicealert.scheduler.SyncScheduler
 import com.upivoicealert.utils.Constants
+import dagger.Lazy
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -17,7 +25,10 @@ import kotlinx.coroutines.flow.map
 @Singleton
 class TransactionRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao,
-    private val unparsedNotificationDao: UnparsedNotificationDao
+    private val unparsedNotificationDao: UnparsedNotificationDao,
+    private val syncQueueDao: SyncQueueDao? = null,
+    private val database: AppDatabase? = null,
+    private val syncScheduler: Lazy<SyncScheduler>? = null
 ) : TransactionRepository {
 
     override fun observeTransactions(): Flow<List<Transaction>> =
@@ -133,14 +144,76 @@ class TransactionRepositoryImpl @Inject constructor(
             return false
         }
         val fingerprint = TransactionFingerprint.compute(transaction)
-        val rowId = transactionDao.insert(transaction.copy(dedupFingerprint = fingerprint).toEntity())
-        val inserted = rowId != -1L
-        Log.i(
-            DUP_TAG,
-            if (inserted) "INSERTED id=${transaction.id} incomingRef=${transaction.transactionId ?: "<none>"} fingerprint=$fingerprint"
-            else "INSERT_CONFLICT id=${transaction.id} incomingRef=${transaction.transactionId ?: "<none>"}"
-        )
-        return inserted
+        val withFingerprint = transaction.copy(dedupFingerprint = fingerprint)
+
+        // Only queue SUCCESS RECEIVED validated transactions (the only ones reaching here)
+        val shouldQueue = withFingerprint.transactionType == TransactionType.RECEIVED &&
+            withFingerprint.status == TransactionStatus.SUCCESS
+
+        // Atomic insert of transaction + sync queue (Phase 6.2 + 6.3 scheduling)
+        if (shouldQueue && syncQueueDao != null && database != null) {
+            return try {
+                var inserted = false
+                database.withTransaction {
+                    val rowId = transactionDao.insert(withFingerprint.toEntity())
+                    inserted = rowId != -1L
+                    if (inserted) {
+                        val now = System.currentTimeMillis()
+                        syncQueueDao.insert(
+                            SyncQueueEntity(
+                                entityType = SyncQueueEntity.ENTITY_TYPE_TRANSACTION,
+                                entityId = withFingerprint.transactionUuid,
+                                status = SyncQueueEntity.STATUS_PENDING,
+                                retryCount = 0,
+                                createdAt = now,
+                                updatedAt = now
+                            )
+                        )
+                        Log.i(DUP_TAG, "ENQUEUED syncQueue entityId=${withFingerprint.transactionUuid}")
+                    }
+                    Log.i(
+                        DUP_TAG,
+                        if (inserted) "INSERTED id=${withFingerprint.id} uuid=${withFingerprint.transactionUuid} incomingRef=${withFingerprint.transactionId ?: "<none>"} fingerprint=$fingerprint"
+                        else "INSERT_CONFLICT id=${withFingerprint.id} incomingRef=${withFingerprint.transactionId ?: "<none>"}"
+                    )
+                }
+                if (inserted) {
+                    try { syncScheduler?.get()?.scheduleSync() } catch (_: Exception) { Log.d(DUP_TAG, "Scheduler not ready") }
+                }
+                inserted
+            } catch (e: Exception) {
+                Log.w(DUP_TAG, "Atomic insert+enqueue failed, rolled back", e)
+                throw e
+            }
+        } else {
+            val rowId = transactionDao.insert(withFingerprint.toEntity())
+            val inserted = rowId != -1L
+            Log.i(
+                DUP_TAG,
+                if (inserted) "INSERTED id=${withFingerprint.id} uuid=${withFingerprint.transactionUuid} incomingRef=${withFingerprint.transactionId ?: "<none>"} fingerprint=$fingerprint"
+                else "INSERT_CONFLICT id=${withFingerprint.id} incomingRef=${withFingerprint.transactionId ?: "<none>"}"
+            )
+            // Fallback enqueue without transaction (for tests without DB)
+            if (inserted && shouldQueue && syncQueueDao != null) {
+                try {
+                    val now = System.currentTimeMillis()
+                    syncQueueDao.insert(
+                        SyncQueueEntity(
+                            entityType = SyncQueueEntity.ENTITY_TYPE_TRANSACTION,
+                            entityId = withFingerprint.transactionUuid,
+                            status = SyncQueueEntity.STATUS_PENDING,
+                            retryCount = 0,
+                            createdAt = now,
+                            updatedAt = now
+                        )
+                    )
+                    try { syncScheduler?.get()?.scheduleSync() } catch (_: Exception) { }
+                } catch (e: Exception) {
+                    Log.w(DUP_TAG, "Enqueue failed after insert", e)
+                }
+            }
+            return inserted
+        }
     }
 
     override suspend fun addUnparsedNotification(notification: UnparsedNotification) {

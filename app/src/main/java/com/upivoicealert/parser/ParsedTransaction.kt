@@ -28,5 +28,6 @@ fun ParsedTransaction.toTransaction(parserVersion: String): Transaction = Transa
     rawNotification = rawNotification,
     parserVersion = parserVersion,
     parseStatus = ParseStatus.PARSED,
-    createdAt = postTime
+    createdAt = postTime,
+    transactionUuid = UUID.randomUUID().toString()
 )

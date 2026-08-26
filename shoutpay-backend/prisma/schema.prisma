@@ -75,7 +75,6 @@ model Device {
   updatedAt      DateTime           @updatedAt
 
   merchant     Merchant      @relation(fields: [merchantId], references: [id], onDelete: Restrict)
-  transactions Transaction[]
   authSessions AuthSession[]
 
   @@index([merchantId])
@@ -122,32 +121,44 @@ model RefreshToken {
 }
 
 model Transaction {
-  id               String            @id @default(cuid())
-  transactionId    String
-  merchantId       String
-  deviceId         String
-  amount           Decimal           @db.Decimal(12, 2)
-  senderName       String
-  upiApp           String
-  referenceId      String?
-  type             TransactionType
-  status           TransactionStatus
+  id              String   @id @default(cuid())
+  transactionUuid String   @unique
+  merchantId      String
+  deviceId        String
+  amount          Decimal  @db.Decimal(12, 2)
+  currency        String   @default("INR")
+  senderName      String
+  senderVpa       String?
+  upiReference    String?
+  upiApp          String?
+  transactionTime DateTime
+  status          String   @default("SUCCESS")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Legacy fields preserved for backward compatibility (pre Phase 6)
+  transactionId   String?
+  referenceId     String?
+  type            TransactionType? @default(RECEIVED)
   dedupFingerprint String?
-  createdAtDevice  DateTime
-  syncedAt         DateTime          @default(now())
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  deletedAt        DateTime?
+  createdAtDevice DateTime?
+  syncedAt        DateTime? @default(now())
+  deletedAt       DateTime?
+  rawNotification String?
+  parserVersion   String?
+  parseStatus     String?
+  sourceType      String?
+  packageName     String?
+  notificationKey String?
+  originalNotificationText String?
+  cleanedNotificationText String?
 
   merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Restrict)
-  device   Device   @relation(fields: [deviceId], references: [id], onDelete: Restrict)
 
-  @@unique([deviceId, transactionId])
   @@index([merchantId])
-  @@index([merchantId, createdAtDevice])
-  @@index([merchantId, deviceId, createdAtDevice])
-  @@index([referenceId])
-  @@index([merchantId, deviceId, dedupFingerprint])
+  @@index([merchantId, transactionTime])
+  @@index([upiReference])
+  @@index([transactionUuid])
   @@map("transactions")
 }
 

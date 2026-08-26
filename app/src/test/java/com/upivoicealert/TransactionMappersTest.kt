@@ -32,7 +32,8 @@ class TransactionMappersTest {
         notificationKey = "0|com.google.android.apps.nbu.paisa.user|0|12345",
         originalNotificationText = "ANKIT KUMAR BRIJESH SHANKA MISHRA paid you ₹10.00 Tap to view. Tap to view.",
         cleanedNotificationText = "ANKIT KUMAR BRIJESH SHANKA MISHRA paid you ₹10.00",
-        voiceAnnounced = true
+        voiceAnnounced = true,
+        transactionUuid = "550e8400-e29b-41d4-a716-446655440001"
     )
 
     @Test

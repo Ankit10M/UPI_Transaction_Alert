@@ -271,6 +271,12 @@ private class FakeTransactionDao : TransactionDao {
             it.rawNotification.trim() == rawNotification.trim() && it.createdAt in windowStart..windowEnd
         }
 
+    override suspend fun findByTransactionUuid(uuid: String): TransactionEntity? =
+        rows.firstOrNull { it.transactionUuid == uuid }
+
+    override suspend fun findByTransactionUuids(uuids: List<String>): List<TransactionEntity> =
+        rows.filter { it.transactionUuid in uuids }
+
     override suspend fun insert(entity: TransactionEntity): Long {
         rows.add(entity)
         return rows.size.toLong()

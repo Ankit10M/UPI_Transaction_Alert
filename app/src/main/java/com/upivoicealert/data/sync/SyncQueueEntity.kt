@@ -21,6 +21,7 @@ data class SyncQueueEntity(
     companion object {
         const val ENTITY_TYPE_TRANSACTION = "TRANSACTION"
         const val STATUS_PENDING = "PENDING"
+        const val STATUS_UPLOADING = "UPLOADING"
         const val STATUS_SYNCED = "SYNCED"
         const val STATUS_FAILED = "FAILED"
     }

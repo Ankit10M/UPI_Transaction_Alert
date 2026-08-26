@@ -15,12 +15,14 @@ data class SyncItem(
 
 enum class SyncStatus {
     PENDING,
+    UPLOADING,
     SYNCED,
     FAILED;
 
     companion object {
         fun fromString(value: String): SyncStatus = when (value.uppercase()) {
             "PENDING" -> PENDING
+            "UPLOADING" -> UPLOADING
             "SYNCED" -> SYNCED
             "FAILED" -> FAILED
             else -> PENDING

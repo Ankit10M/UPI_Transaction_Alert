@@ -26,5 +26,9 @@ data class Transaction(
     // Cross-source dedup fingerprint (schema v4): computed at insert time by the
     // data layer (TransactionFingerprint) and persisted for the duplicate check.
     // Never constructed by parsers — default null keeps all pipeline paths unchanged.
-    val dedupFingerprint: String? = null
+    val dedupFingerprint: String? = null,
+    // Cloud sync identifier (schema v6): stable UUID generated once for successful
+    // RECEIVED transactions via ParsedTransaction.toTransaction, never regenerated,
+    // used as SyncQueue entityId (TRANSACTION/PENDING). Backfilled for legacy rows.
+    val transactionUuid: String = java.util.UUID.randomUUID().toString()
 )
