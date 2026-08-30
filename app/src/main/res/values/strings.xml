@@ -224,4 +224,71 @@
     <!-- Phase 4: Merchant identity -->
     <string name="profile_business_profile">Business Profile</string>
     <string name="profile_merchant_id">Merchant ID: %1$s</string>
+
+    <!-- Phase 7: Cloud Sync Status -->
+    <string name="cloud_sync_title">Cloud Sync</string>
+    <string name="cloud_sync_pending">Pending</string>
+    <string name="cloud_sync_failed">Failed</string>
+    <string name="cloud_sync_last_synced">Last synced %1$s</string>
+    <string name="cloud_sync_status_synced">Synced</string>
+    <string name="cloud_sync_status_syncing">Syncing</string>
+    <string name="cloud_sync_status_pending">Waiting to sync</string>
+    <string name="cloud_sync_status_failed">Needs attention</string>
+    <string name="cloud_sync_status_offline">Offline</string>
+    <string name="cloud_sync_status_never_synced">Waiting to sync</string>
+    <string name="cloud_sync_desc_syncing">Please keep the app open.</string>
+    <string name="cloud_sync_desc_pending">%1$d transaction(s) waiting.</string>
+    <string name="cloud_sync_desc_failed">%1$d transaction(s) could not be synced.</string>
+    <string name="cloud_sync_desc_offline">Transactions will sync when internet is available.</string>
+    <string name="cloud_sync_desc_never_synced">Your transactions will be synced to the cloud.</string>
+    <string name="cloud_sync_btn_sync_now">Sync Now</string>
+    <string name="cloud_sync_btn_retry">Retry Sync</string>
+    <string name="cloud_sync_btn_syncing">Syncing…</string>
+    <string name="cloud_sync_btn_retry_when_online">Retry when online</string>
+    <string name="cloud_sync_view_failures">View failed transactions</string>
+
+    <!-- Phase 7.2: Sync failure diagnostics -->
+    <string name="sync_failures_title">Failed Sync Transactions</string>
+    <string name="sync_failures_summary">%1$d transaction(s) failed to sync</string>
+    <string name="sync_failures_retry_all">Retry all</string>
+    <string name="sync_failures_retry">Retry</string>
+    <string name="sync_failures_item_title">Transaction sync failed</string>
+    <string name="sync_failures_default_message">Transaction data could not be synced.</string>
+    <string name="sync_failures_retry_count">Retries: %1$d</string>
+    <string name="sync_failures_empty">No failed transactions</string>
+    <string name="sync_failures_empty_desc">All transactions synced successfully.</string>
+
+    <!-- Phase 7.3: Reconciliation -->
+    <string name="reconciliation_title">Sync Integrity</string>
+    <string name="reconciliation_last_checked">Last checked: %1$s</string>
+    <string name="reconciliation_never_checked">Sync integrity not yet checked</string>
+    <string name="reconciliation_recovered">%1$d transactions were prepared for cloud sync.</string>
+    <string name="reconciliation_up_to_date">Your transaction sync data is up to date.</string>
+    <string name="reconciliation_check_now">Check sync integrity</string>
+    <string name="reconciliation_checking">Checking your transaction sync data...</string>
+
+    <!-- Phase 7.5: Sync Integrity Audit -->
+    <string name="sync_integrity_title">Sync integrity</string>
+    <string name="sync_integrity_never_checked">Not checked yet</string>
+    <string name="sync_integrity_never_desc">Check whether your local sync records are consistent.</string>
+    <string name="sync_integrity_healthy">All local sync records look healthy</string>
+    <string name="sync_integrity_issues">%1$d issues need attention</string>
+    <string name="sync_integrity_missing">Missing sync records: %1$d</string>
+    <string name="sync_integrity_stale">Stale uploads: %1$d</string>
+    <string name="sync_integrity_orphaned">Orphaned records: %1$d</string>
+    <string name="sync_integrity_last_checked">Last checked: %1$s</string>
+    <string name="sync_integrity_check_now">Check again</string>
+    <string name="sync_integrity_checking">Checking…</string>
+    <string name="sync_integrity_check_now_first">Check now</string>
+
+    <!-- Phase 7.6: Sync Diagnostics -->
+    <string name="sync_diagnostics_title">Sync activity</string>
+    <string name="sync_diagnostics_view">View sync activity</string>
+    <string name="sync_diagnostics_clear">Clear</string>
+    <string name="sync_diagnostics_empty">No sync activity yet</string>
+    <string name="sync_diagnostics_empty_desc">Recent sync and recovery events will appear here.</string>
+    <string name="sync_diagnostics_affected">%1$d transactions affected</string>
+    <string name="sync_diagnostics_clear_title">Clear sync activity history?</string>
+    <string name="sync_diagnostics_clear_body">This only removes the activity history shown here. Your transactions and sync status will not be affected.</string>
+    <string name="sync_diagnostics_clear_confirm">Clear history</string>
 </resources>

@@ -62,6 +62,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.upivoicealert.R
 import com.upivoicealert.ui.components.ActivityCard
+import com.upivoicealert.ui.components.CloudSyncStatusCard
 import com.upivoicealert.ui.components.EmptyStateView
 import com.upivoicealert.ui.components.ShoutPayLogo
 import com.upivoicealert.ui.components.TransactionCard
@@ -74,6 +75,12 @@ import com.upivoicealert.ui.theme.SuccessGreenLight
 import com.upivoicealert.utils.BatteryOptimizationHelper
 import com.upivoicealert.utils.DateTimeUtils
 import com.upivoicealert.utils.NotificationAccessHelper
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.upivoicealert.ui.components.ReconciliationStatusCard
+import com.upivoicealert.ui.components.SyncIntegrityStatusCard
+import com.upivoicealert.ui.sync.ReconciliationViewModel
+import com.upivoicealert.ui.sync.SyncIntegrityViewModel
+import com.upivoicealert.ui.sync.SyncStatusViewModel
 
 @Composable
 fun HomeScreen(
@@ -81,10 +88,19 @@ fun HomeScreen(
     onOpenVerification: () -> Unit,
     onOpenBusiness: () -> Unit,
     onOpenProfile: () -> Unit,
+    onOpenSyncFailures: () -> Unit = {},
+    onOpenSyncDiagnostics: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val mobileNumber by viewModel.mobileNumber.collectAsStateWithLifecycle()
+    val syncStatusViewModel: SyncStatusViewModel = hiltViewModel()
+    val syncStatus by syncStatusViewModel.syncStatus.collectAsStateWithLifecycle()
+    val reconciliationViewModel: ReconciliationViewModel = hiltViewModel()
+    val reconciliationState by reconciliationViewModel.uiState.collectAsStateWithLifecycle()
+    val integrityViewModel: SyncIntegrityViewModel = hiltViewModel()
+    val integrityStatus by integrityViewModel.status.collectAsStateWithLifecycle()
+    val integrityChecking by integrityViewModel.checking.collectAsStateWithLifecycle()
 
     var showAddNumber by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -143,6 +159,31 @@ fun HomeScreen(
             onOpenBatterySettings = {
                 BatteryOptimizationHelper.requestExemption(context)
             }
+        )
+        Spacer(Modifier.height(20.dp))
+
+        // ─── Cloud Sync Status ─────────────────────────────────────────────
+        CloudSyncStatusCard(
+            syncStatus = syncStatus,
+            onSyncNow = syncStatusViewModel::syncNow,
+            onViewFailures = onOpenSyncFailures,
+            onViewDiagnostics = onOpenSyncDiagnostics
+        )
+        Spacer(Modifier.height(20.dp))
+
+        // ─── Sync Integrity (Phase 7.3) ───────────────────────────────────
+        ReconciliationStatusCard(
+            lastCheckedAt = reconciliationState.lastCheckedAt,
+            lastRepairedCount = reconciliationState.lastRepairedCount,
+            onCheckNow = reconciliationViewModel::checkNow
+        )
+        Spacer(Modifier.height(20.dp))
+
+        // ─── Sync Integrity Audit (Phase 7.5) ─────────────────────────────
+        SyncIntegrityStatusCard(
+            status = integrityStatus,
+            isChecking = integrityChecking,
+            onCheckNow = integrityViewModel::checkNow
         )
         Spacer(Modifier.height(20.dp))
 

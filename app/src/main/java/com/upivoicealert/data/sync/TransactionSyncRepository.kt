@@ -13,6 +13,7 @@ import retrofit2.HttpException
  * Repository handling cloud sync for pending transactions.
  * Reads pending SyncQueue, loads Room transactions, batches (max 100), calls API, updates queue.
  * Never modifies offline pipeline; network failure never affects local storage/TTS.
+ * Phase 7.2: stores sanitized failure diagnostics for HTTP 400 -> FAILED.
  */
 @Singleton
 class TransactionSyncRepository @Inject constructor(
@@ -21,6 +22,8 @@ class TransactionSyncRepository @Inject constructor(
     private val api: TransactionSyncApi,
     private val deviceIdProvider: DeviceIdProvider
 ) {
+
+    enum class RetryCause { NETWORK, SERVER }
 
     sealed interface SyncResult {
         data object Success : SyncResult
@@ -31,9 +34,20 @@ class TransactionSyncRepository @Inject constructor(
         data object NoPending : SyncResult
     }
 
+    // Diagnostic helpers — set during syncPendingTransactions, read by worker for sanitized diagnostics only
+    var lastSuccessCount: Int = 0
+        private set
+    var lastRetryCause: RetryCause = RetryCause.SERVER
+        private set
+
     companion object {
         const val BATCH_SIZE = 100
         private const val TAG = "TransactionSync"
+        const val ERROR_CODE_VALIDATION = "VALIDATION_ERROR"
+        const val ERROR_CODE_REJECTED = "SYNC_REJECTED"
+        const val ERROR_MSG_VALIDATION = "Transaction data could not be synced."
+        const val ERROR_MSG_REJECTED = "The transaction was rejected by the server."
+        const val ERROR_MSG_MISSING = "Transaction data could not be synced."
     }
 
     suspend fun syncPendingTransactions(): SyncResult {
@@ -60,17 +74,16 @@ class TransactionSyncRepository @Inject constructor(
                 }
                 is SyncResult.Retry -> {
                     shouldRetry = true
-                    // Increment retry for this batch
-                    batch.forEach { syncQueueDao.incrementRetryCount(it.id, System.currentTimeMillis()) }
+                    // Increment retry for this batch — restrictive to PENDING only
+                    batch.forEach { syncQueueDao.incrementRetryCountIfExpected(it.id, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis()) }
                 }
                 is SyncResult.Error -> {
-                    // Validation error → mark FAILED
+                    // Validation error → already marked FAILED with diagnostics inside syncBatch
                     if (result.message.contains("Validation", ignoreCase = true) || result.message.contains("400")) {
-                        batch.forEach { syncQueueDao.updateStatus(it.id, SyncQueueEntity.STATUS_FAILED, System.currentTimeMillis()) }
                         totalFailed += batch.size
                     } else {
                         shouldRetry = true
-                        batch.forEach { syncQueueDao.incrementRetryCount(it.id, System.currentTimeMillis()) }
+                        batch.forEach { syncQueueDao.incrementRetryCountIfExpected(it.id, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis()) }
                     }
                 }
                 is SyncResult.SessionExpired -> return SyncResult.SessionExpired
@@ -79,25 +92,34 @@ class TransactionSyncRepository @Inject constructor(
         }
 
         return when {
-            totalFailed == 0 && !shouldRetry && totalSynced > 0 -> SyncResult.Success
+            totalFailed == 0 && !shouldRetry && totalSynced > 0 -> {
+                lastSuccessCount = totalSynced
+                SyncResult.Success
+            }
             totalSynced > 0 && (totalFailed > 0 || shouldRetry) -> SyncResult.PartialSuccess(totalSynced, totalFailed)
             shouldRetry -> SyncResult.Retry
             totalFailed > 0 -> SyncResult.Error("Validation failed for $totalFailed items")
-            else -> SyncResult.Success
+            else -> {
+                lastSuccessCount = 0
+                SyncResult.Success
+            }
         }
     }
 
     private suspend fun syncBatch(batch: List<SyncQueueEntity>): SyncResult {
-        // Mark as UPLOADING
+        // Mark as UPLOADING — restrictive: only PENDING → UPLOADING to avoid overwriting concurrent state changes
         val now = System.currentTimeMillis()
-        batch.forEach { syncQueueDao.updateStatus(it.id, SyncQueueEntity.STATUS_UPLOADING, now) }
+        batch.forEach {
+            val updated = syncQueueDao.updateStatusIfExpected(it.id, SyncQueueEntity.STATUS_PENDING, SyncQueueEntity.STATUS_UPLOADING, now)
+            if (updated == 0) Log.w(TAG, "Skip UPLOADING for ${it.id}: not PENDING (race)")
+        }
 
         // Load matching transactions
         val uuids = batch.map { it.entityId }
         val transactions = transactionDao.findByTransactionUuids(uuids)
         val transactionMap = transactions.associateBy { it.transactionUuid }
 
-        // Build upload DTOs, skipping missing transactions (mark as FAILED)
+        // Build upload DTOs, skipping missing transactions (mark as FAILED with diagnostics)
         val deviceId = try { deviceIdProvider.getDeviceId() } catch (_: Exception) { "unknown-device" }
         val uploads = mutableListOf<TransactionUploadDto>()
         val missingIds = mutableListOf<Long>()
@@ -106,7 +128,11 @@ class TransactionSyncRepository @Inject constructor(
             val txn = transactionMap[queueItem.entityId]
             if (txn == null) {
                 Log.w(TAG, "Missing transaction for queue ${queueItem.id} uuid=${queueItem.entityId}, marking FAILED")
-                syncQueueDao.updateStatus(queueItem.id, SyncQueueEntity.STATUS_FAILED, System.currentTimeMillis())
+                markFailedWithDiagnostics(
+                    queueItem.id,
+                    ERROR_CODE_VALIDATION,
+                    ERROR_MSG_MISSING
+                )
                 continue
             }
             uploads.add(
@@ -136,11 +162,13 @@ class TransactionSyncRepository @Inject constructor(
             val syncedUuids = (response.created + response.duplicates).toSet()
             for (queueItem in batch) {
                 if (syncedUuids.contains(queueItem.entityId)) {
-                    syncQueueDao.updateStatus(queueItem.id, SyncQueueEntity.STATUS_SYNCED, System.currentTimeMillis())
+                    val updated = syncQueueDao.updateStatusIfExpected(queueItem.id, SyncQueueEntity.STATUS_UPLOADING, SyncQueueEntity.STATUS_SYNCED, System.currentTimeMillis())
+                    if (updated == 0) Log.w(TAG, "Skip SYNCED for ${queueItem.id}: not UPLOADING")
                 } else if (!missingIds.contains(queueItem.id)) {
                     // Not in created/duplicates but was uploaded → treat as failed? Keep pending for retry
-                    syncQueueDao.updateStatus(queueItem.id, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis())
-                    syncQueueDao.incrementRetryCount(queueItem.id, System.currentTimeMillis())
+                    val reverted = syncQueueDao.updateStatusIfExpected(queueItem.id, SyncQueueEntity.STATUS_UPLOADING, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis())
+                    if (reverted == 0) Log.w(TAG, "Skip PENDING revert for ${queueItem.id}: not UPLOADING")
+                    else syncQueueDao.incrementRetryCountIfExpected(queueItem.id, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis())
                 }
             }
 
@@ -149,37 +177,91 @@ class TransactionSyncRepository @Inject constructor(
 
         } catch (e: IOException) {
             Log.w(TAG, "Network failure, will retry", e)
-            // Revert UPLOADING → PENDING for retry
-            batch.forEach { syncQueueDao.updateStatus(it.id, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis()) }
+            // Revert UPLOADING → PENDING for retry (no diagnostics, preserve for retry) — restrictive
+            batch.forEach {
+                val reverted = syncQueueDao.updateStatusIfExpected(it.id, SyncQueueEntity.STATUS_UPLOADING, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis())
+                if (reverted == 0) Log.w(TAG, "Skip PENDING revert (network) for ${it.id}")
+            }
+            lastRetryCause = RetryCause.NETWORK
             SyncResult.Retry
         } catch (e: HttpException) {
             val code = e.code()
             Log.w(TAG, "HTTP $code during sync", e)
             when {
                 code == 401 -> {
-                    batch.forEach { syncQueueDao.updateStatus(it.id, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis()) }
+                    batch.forEach {
+                        val reverted = syncQueueDao.updateStatusIfExpected(it.id, SyncQueueEntity.STATUS_UPLOADING, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis())
+                        if (reverted == 0) Log.w(TAG, "Skip PENDING revert (401) for ${it.id}")
+                    }
                     SyncResult.SessionExpired
                 }
                 code in 500..599 -> {
                     batch.forEach {
-                        syncQueueDao.updateStatus(it.id, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis())
+                        val reverted = syncQueueDao.updateStatusIfExpected(it.id, SyncQueueEntity.STATUS_UPLOADING, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis())
+                        if (reverted == 0) Log.w(TAG, "Skip PENDING revert (5xx) for ${it.id}")
                     }
+                    lastRetryCause = RetryCause.SERVER
                     SyncResult.Retry
                 }
                 code == 400 -> {
-                    // Validation error → permanent failure
-                    batch.forEach { syncQueueDao.updateStatus(it.id, SyncQueueEntity.STATUS_FAILED, System.currentTimeMillis()) }
+                    // Validation error → permanent failure with sanitized diagnostics
+                    batch.forEach {
+                        markFailedWithDiagnostics(
+                            it.id,
+                            ERROR_CODE_VALIDATION,
+                            ERROR_MSG_VALIDATION
+                        )
+                    }
+                    SyncResult.Error("Validation error: ${e.message()}")
+                }
+                code in 400..499 -> {
+                    // Other 4xx (except 400/401) -> also permanent but generic message
+                    batch.forEach {
+                        markFailedWithDiagnostics(
+                            it.id,
+                            ERROR_CODE_REJECTED,
+                            ERROR_MSG_REJECTED
+                        )
+                    }
                     SyncResult.Error("Validation error: ${e.message()}")
                 }
                 else -> {
-                    batch.forEach { syncQueueDao.updateStatus(it.id, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis()) }
+                    batch.forEach {
+                        val reverted = syncQueueDao.updateStatusIfExpected(it.id, SyncQueueEntity.STATUS_UPLOADING, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis())
+                        if (reverted == 0) Log.w(TAG, "Skip PENDING revert (else) for ${it.id}")
+                    }
+                    lastRetryCause = RetryCause.SERVER
                     SyncResult.Retry
                 }
             }
         } catch (e: Exception) {
             Log.w(TAG, "Unexpected sync failure", e)
-            batch.forEach { syncQueueDao.updateStatus(it.id, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis()) }
+            batch.forEach {
+                val reverted = syncQueueDao.updateStatusIfExpected(it.id, SyncQueueEntity.STATUS_UPLOADING, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis())
+                if (reverted == 0) Log.w(TAG, "Skip PENDING revert (exception) for ${it.id}")
+            }
             SyncResult.Error(e.message ?: "Unknown error")
+        }
+    }
+
+    private suspend fun markFailedWithDiagnostics(
+        queueId: Long,
+        errorCode: String,
+        errorMessage: String
+    ) {
+        val now = System.currentTimeMillis()
+        val updated = syncQueueDao.markFailedWithDiagnosticsIfExpected(
+            id = queueId,
+            status = SyncQueueEntity.STATUS_FAILED,
+            errorCode = errorCode,
+            errorMessage = errorMessage,
+            failedAt = now,
+            updatedAt = now,
+            expectedStatus = SyncQueueEntity.STATUS_UPLOADING
+        )
+        if (updated == 0) {
+            Log.w(TAG, "Skip FAILED for $queueId: not UPLOADING (race with manual retry or recovery)")
+            // Fallback: if not UPLOADING anymore, don't overwrite SYNCED/PENDING/FAILED state
         }
     }
 }

@@ -4,17 +4,19 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.upivoicealert.data.sync.SyncDiagnosticEventEntity
 import com.upivoicealert.data.sync.SyncQueueEntity
 
 @Database(
-    entities = [TransactionEntity::class, UnparsedNotificationEntity::class, SyncQueueEntity::class],
-    version = 6,
+    entities = [TransactionEntity::class, UnparsedNotificationEntity::class, SyncQueueEntity::class, SyncDiagnosticEventEntity::class],
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun unparsedNotificationDao(): UnparsedNotificationDao
     abstract fun syncQueueDao(): com.upivoicealert.data.sync.SyncQueueDao
+    abstract fun syncDiagnosticDao(): com.upivoicealert.data.sync.SyncDiagnosticDao
 
     companion object {
         /**
@@ -110,6 +112,67 @@ abstract class AppDatabase : RoomDatabase() {
                 // Backfill legacy rows with their primary key (stable UUID already)
                 db.execSQL("UPDATE transactions SET transactionUuid = id WHERE transactionUuid = ''")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_transactionUuid ON transactions(transactionUuid)")
+            }
+        }
+
+        /**
+         * v6 -> v7: sync failure diagnostics (Phase 7.2).
+         * Adds lastErrorCode, lastErrorMessage, failedAt to sync_queue.
+         * Purely additive — existing rows default to NULL (no failure diagnostics).
+         * No data loss, no table rebuild.
+         */
+        val MIGRATION_6_7: Migration = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE sync_queue ADD COLUMN lastErrorCode TEXT")
+                db.execSQL("ALTER TABLE sync_queue ADD COLUMN lastErrorMessage TEXT")
+                db.execSQL("ALTER TABLE sync_queue ADD COLUMN failedAt INTEGER")
+            }
+        }
+
+        /**
+         * v7 -> v8: reconciliation integrity (Phase 7.3).
+         * Adds unique index on (entityType, entityId) to enforce one queue item
+         * per transaction. Before creating the index, removes deterministic
+         * duplicates (keep earliest id per group) if any exist due to historic
+         * race conditions.
+         */
+        val MIGRATION_7_8: Migration = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Remove duplicates: keep smallest id per (entityType, entityId)
+                db.execSQL(
+                    """
+                    DELETE FROM sync_queue WHERE id NOT IN (
+                        SELECT MIN(id) FROM sync_queue GROUP BY entityType, entityId
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS index_sync_queue_entity ON sync_queue(entityType, entityId)"
+                )
+            }
+        }
+
+        /**
+         * v8 -> v9: sync diagnostic events (Phase 7.6).
+         * Additive only: creates sync_diagnostic_events table with indexes.
+         */
+        val MIGRATION_8_9: Migration = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS sync_diagnostic_events (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        category TEXT NOT NULL,
+                        eventType TEXT NOT NULL,
+                        affectedCount INTEGER NOT NULL DEFAULT 0,
+                        createdAt INTEGER NOT NULL,
+                        message TEXT
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_sync_diagnostic_events_createdAt ON sync_diagnostic_events(createdAt)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_sync_diagnostic_events_category ON sync_diagnostic_events(category)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_sync_diagnostic_events_eventType ON sync_diagnostic_events(eventType)")
             }
         }
     }

@@ -195,12 +195,21 @@ class TransactionSyncQueueActivationTest {
         override suspend fun insert(entity: TransactionEntity): Long { rows.add(entity); return rows.size.toLong() }
         override suspend fun markVoiceAnnounced(id: String) {}
         override suspend fun clearAll() { rows.clear() }
+        override suspend fun getEligibleMissingQueueUuids(limit: Int, offset: Int): List<String> = emptyList()
+        override suspend fun countEligibleMissingQueue(): Int = 0
+        override suspend fun countEligibleTransactions(): Int = 0
     }
 
     private class FakeSyncQueueDao : SyncQueueDao {
         val rows = mutableListOf<SyncQueueEntity>()
         private var nextId = 1L
         override suspend fun insert(item: SyncQueueEntity): Long {
+            val id = if (item.id == 0L) nextId++ else item.id
+            rows.add(item.copy(id = id))
+            return id
+        }
+        override suspend fun insertIgnore(item: SyncQueueEntity): Long {
+            if (rows.any { it.entityType == item.entityType && it.entityId == item.entityId }) return -1L
             val id = if (item.id == 0L) nextId++ else item.id
             rows.add(item.copy(id = id))
             return id
@@ -212,6 +221,16 @@ class TransactionSyncQueueActivationTest {
         override suspend fun getAll(): List<SyncQueueEntity> = rows
         override suspend fun deleteById(id: Long) {}
         override suspend fun clearAll() { rows.clear() }
+        override fun observeCountByStatus(status: String): kotlinx.coroutines.flow.Flow<Int> = kotlinx.coroutines.flow.flowOf(rows.count { it.status == status })
+        override suspend fun getCountByStatus(status: String): Int = rows.count { it.status == status }
+        override suspend fun getFailedItems(): List<SyncQueueEntity> = rows.filter { it.status == SyncQueueEntity.STATUS_FAILED }
+        override suspend fun getById(id: Long): SyncQueueEntity? = rows.firstOrNull { it.id == id }
+        override suspend fun markFailedWithDiagnostics(id: Long, status: String, errorCode: String?, errorMessage: String?, failedAt: Long?, updatedAt: Long) {}
+        override suspend fun retryFailedItem(id: Long, updatedAt: Long): Int = 0
+        override suspend fun retryAllFailed(updatedAt: Long): Int = 0
+        override fun observeFailedItems(): kotlinx.coroutines.flow.Flow<List<SyncQueueEntity>> = kotlinx.coroutines.flow.flowOf(emptyList())
+        override suspend fun getStaleUploadingItems(cutoffTime: Long) = emptyList<SyncQueueEntity>()
+        override suspend fun recoverStaleUploading(cutoffTime: Long, updatedAt: Long) = 0
     }
 
     private class FakeUnparsedDao : UnparsedNotificationDao {

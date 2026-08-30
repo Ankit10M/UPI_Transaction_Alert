@@ -88,4 +88,60 @@ interface TransactionDao {
 
     @Query("DELETE FROM transactions")
     suspend fun clearAll()
+
+    // ─── Phase 7.3: reconciliation support ─────────────────────────────
+
+    @Query(
+        """
+        SELECT transactionUuid FROM transactions
+        WHERE status = 'SUCCESS' AND transactionType = 'RECEIVED'
+        AND transactionUuid NOT IN (
+            SELECT entityId FROM sync_queue WHERE entityType = 'TRANSACTION'
+        )
+        ORDER BY createdAt ASC LIMIT :limit OFFSET :offset
+        """
+    )
+    suspend fun getEligibleMissingQueueUuids(limit: Int, offset: Int): List<String>
+
+    @Query(
+        """
+        SELECT COUNT(*) FROM transactions
+        WHERE status = 'SUCCESS' AND transactionType = 'RECEIVED'
+        AND transactionUuid NOT IN (
+            SELECT entityId FROM sync_queue WHERE entityType = 'TRANSACTION'
+        )
+        """
+    )
+    suspend fun countEligibleMissingQueue(): Int
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE status = 'SUCCESS' AND transactionType = 'RECEIVED'")
+    suspend fun countEligibleTransactions(): Int
+
+    // ─── Phase 7.5: integrity audit (efficient COUNT/EXISTS, no full table load) ─
+
+    @Query(
+        """
+        SELECT COUNT(*) FROM transactions
+        WHERE status = 'SUCCESS' AND transactionType = 'RECEIVED'
+        AND TRIM(transactionUuid) != ''
+        """
+    )
+    suspend fun countEligibleForAudit(): Int = 0
+
+    @Query(
+        """
+        SELECT COUNT(*) FROM transactions
+        WHERE status = 'SUCCESS' AND transactionType = 'RECEIVED'
+        AND TRIM(transactionUuid) != ''
+        AND NOT EXISTS (
+            SELECT 1 FROM sync_queue
+            WHERE sync_queue.entityType = 'TRANSACTION'
+            AND sync_queue.entityId = transactions.transactionUuid
+        )
+        """
+    )
+    suspend fun countMissingQueueForAudit(): Int = 0
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE TRIM(transactionUuid) != ''")
+    suspend fun countScannedTransactionsForAudit(): Int = 0
 }

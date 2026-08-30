@@ -21,12 +21,12 @@ import javax.inject.Singleton
  * Uses unique work KEEP to avoid duplicates.
  */
 @Singleton
-class SyncScheduler @Inject constructor(
+open class SyncScheduler @Inject constructor(
     @ApplicationContext private val context: Context
-) {
+) : SyncSchedulable {
     private val workManager = WorkManager.getInstance(context)
 
-    fun scheduleSync() {
+    override fun scheduleSync() {
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()

@@ -41,6 +41,8 @@ import com.upivoicealert.ui.onboarding.ReadyScreen
 import com.upivoicealert.ui.onboarding.VoiceTestScreen
 import com.upivoicealert.ui.pricing.PricingScreen
 import com.upivoicealert.ui.profile.ProfileScreen
+import com.upivoicealert.ui.sync.SyncDiagnosticsScreen
+import com.upivoicealert.ui.sync.SyncFailuresScreen
 import com.upivoicealert.ui.verification.VerificationScreen
 import com.upivoicealert.ui.auth.OtpScreen
 
@@ -52,6 +54,8 @@ object Routes {
     const val VERIFICATION = "verification"
     const val PRICING = "pricing"
     const val UNPARSED = "unparsed"
+    const val SYNC_FAILURES = "syncFailures"
+    const val SYNC_DIAGNOSTICS = "syncDiagnostics"
     const val LANDING = "landing"
     const val PRIVACY = "privacy"
     const val MOBILE_NUMBER = "mobileNumber"
@@ -142,7 +146,9 @@ fun MainNavHost() {
                     onOpenHistory = { navController.navigate(Routes.HISTORY) },
                     onOpenVerification = { navController.navigate(Routes.VERIFICATION) },
                     onOpenBusiness = { navController.navigate(Routes.BUSINESS) },
-                    onOpenProfile = { navController.navigate(Routes.PROFILE) }
+                    onOpenProfile = { navController.navigate(Routes.PROFILE) },
+                    onOpenSyncFailures = { navController.navigate(Routes.SYNC_FAILURES) },
+                    onOpenSyncDiagnostics = { navController.navigate(Routes.SYNC_DIAGNOSTICS) }
                 )
             }
             composable(Routes.HISTORY) {
@@ -163,6 +169,12 @@ fun MainNavHost() {
             }
             composable(Routes.UNPARSED) {
                 UnparsedNotificationsScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SYNC_FAILURES) {
+                SyncFailuresScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Routes.SYNC_DIAGNOSTICS) {
+                SyncDiagnosticsScreen(onBack = { navController.popBackStack() })
             }
             composable(Routes.OTP) { OtpScreen() }
         }

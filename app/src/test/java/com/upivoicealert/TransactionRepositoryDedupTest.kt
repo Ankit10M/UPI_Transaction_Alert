@@ -286,6 +286,9 @@ private class FakeTransactionDao : TransactionDao {
     override suspend fun clearAll() {
         rows.clear()
     }
+    override suspend fun getEligibleMissingQueueUuids(limit: Int, offset: Int): List<String> = emptyList()
+    override suspend fun countEligibleMissingQueue(): Int = 0
+    override suspend fun countEligibleTransactions(): Int = 0
 }
 
 private class FakeUnparsedNotificationDao : UnparsedNotificationDao {

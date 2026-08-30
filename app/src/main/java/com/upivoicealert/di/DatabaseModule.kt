@@ -26,7 +26,10 @@ object DatabaseModule {
                 AppDatabase.MIGRATION_2_3,
                 AppDatabase.MIGRATION_3_4,
                 AppDatabase.MIGRATION_4_5,
-                AppDatabase.MIGRATION_5_6
+                AppDatabase.MIGRATION_5_6,
+                AppDatabase.MIGRATION_6_7,
+                AppDatabase.MIGRATION_7_8,
+                AppDatabase.MIGRATION_8_9
             )
             .build()
 
@@ -38,4 +41,7 @@ object DatabaseModule {
 
     @Provides
     fun provideSyncQueueDao(db: AppDatabase): SyncQueueDao = db.syncQueueDao()
+
+    @Provides
+    fun provideSyncDiagnosticDao(db: AppDatabase): com.upivoicealert.data.sync.SyncDiagnosticDao = db.syncDiagnosticDao()
 }

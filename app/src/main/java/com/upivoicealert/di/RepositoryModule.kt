@@ -8,7 +8,9 @@ import com.upivoicealert.data.repository.SettingsRepositoryImpl
 import com.upivoicealert.data.repository.SubscriptionRepositoryImpl
 import com.upivoicealert.data.repository.TransactionRepositoryImpl
 import com.upivoicealert.data.repository.UserRepositoryImpl
+import com.upivoicealert.data.sync.SyncDiagnosticRepositoryImpl
 import com.upivoicealert.data.sync.SyncQueueRepositoryImpl
+import com.upivoicealert.data.sync.SyncStatusRepositoryImpl
 import com.upivoicealert.domain.repository.PaymentVerificationRepository
 import com.upivoicealert.domain.repository.ServiceStateRepository
 import com.upivoicealert.domain.repository.SettingsRepository
@@ -16,6 +18,7 @@ import com.upivoicealert.domain.repository.SubscriptionRepository
 import com.upivoicealert.domain.repository.TransactionRepository
 import com.upivoicealert.domain.repository.UserRepository
 import com.upivoicealert.domain.sync.SyncQueueRepository
+import com.upivoicealert.domain.sync.SyncStatusRepository
 import com.upivoicealert.utils.DeviceIdGenerator
 import com.upivoicealert.utils.DeviceIdProvider
 import com.upivoicealert.voice.VoiceAnnouncement
@@ -57,6 +60,18 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindSyncQueueRepository(impl: SyncQueueRepositoryImpl): SyncQueueRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSyncStatusRepository(impl: SyncStatusRepositoryImpl): SyncStatusRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSyncDiagnosticRepository(impl: SyncDiagnosticRepositoryImpl): com.upivoicealert.domain.sync.SyncDiagnosticRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSyncDiagnosticRecorder(impl: SyncDiagnosticRepositoryImpl): com.upivoicealert.domain.sync.SyncDiagnosticRecorder
 
     @Binds
     @Singleton

@@ -23,19 +23,61 @@ class SyncQueueDaoTest {
             rows.add(copy)
             return id
         }
+        override suspend fun insertIgnore(item: SyncQueueEntity): Long {
+            if (rows.any { it.entityType == item.entityType && it.entityId == item.entityId }) return -1L
+            val id = if (item.id == 0L) nextId++ else item.id
+            rows.add(item.copy(id = id))
+            return id
+        }
         override suspend fun getByStatus(status: String): List<SyncQueueEntity> = rows.filter { it.status == status }
         override suspend fun getPendingItems(): List<SyncQueueEntity> = rows.filter { it.status == SyncQueueEntity.STATUS_PENDING }.sortedBy { it.createdAt }
         override suspend fun updateStatus(id: Long, status: String, updatedAt: Long) {
             val idx = rows.indexOfFirst { it.id == id }
             if (idx >= 0) rows[idx] = rows[idx].copy(status = status, updatedAt = updatedAt)
         }
-        override suspend fun incrementRetryCount(id: Long, updatedAt: Long) {
+                override suspend fun incrementRetryCount(id: Long, updatedAt: Long) {
             val idx = rows.indexOfFirst { it.id == id }
             if (idx >= 0) rows[idx] = rows[idx].copy(retryCount = rows[idx].retryCount + 1, updatedAt = updatedAt)
         }
+        override suspend fun updateStatusIfExpected(id: Long, expectedStatus: String, newStatus: String, updatedAt: Long): Int { val idx=rows.indexOfFirst{it.id==id}; if(idx>=0 && rows[idx].status==expectedStatus){ rows[idx]=rows[idx].copy(status=newStatus, updatedAt=updatedAt); return 1 }; return 0 }
+        override suspend fun incrementRetryCountIfExpected(id: Long, expectedStatus: String, updatedAt: Long): Int { val idx=rows.indexOfFirst{it.id==id}; if(idx>=0 && rows[idx].status==expectedStatus){ rows[idx]=rows[idx].copy(retryCount=rows[idx].retryCount+1, updatedAt=updatedAt); return 1 }; return 0 }
+        override suspend fun markFailedWithDiagnosticsIfExpected(id: Long, status: String, errorCode: String?, errorMessage: String?, failedAt: Long?, updatedAt: Long, expectedStatus: String): Int { val idx=rows.indexOfFirst{it.id==id}; if(idx>=0 && rows[idx].status==expectedStatus){ rows[idx]=rows[idx].copy(status=status, lastErrorCode=errorCode, lastErrorMessage=errorMessage, failedAt=failedAt, updatedAt=updatedAt); return 1 }; return 0 }
         override suspend fun getAll(): List<SyncQueueEntity> = rows.sortedBy { it.createdAt }
         override suspend fun deleteById(id: Long) { rows.removeIf { it.id == id } }
         override suspend fun clearAll() { rows.clear() }
+        override fun observeCountByStatus(status: String): kotlinx.coroutines.flow.Flow<Int> = kotlinx.coroutines.flow.flowOf(rows.count { it.status == status })
+        override suspend fun getCountByStatus(status: String): Int = rows.count { it.status == status }
+        override suspend fun getFailedItems(): List<SyncQueueEntity> = rows.filter { it.status == SyncQueueEntity.STATUS_FAILED }.sortedByDescending { it.failedAt ?: 0 }
+        override suspend fun getById(id: Long): SyncQueueEntity? = rows.firstOrNull { it.id == id }
+        override suspend fun markFailedWithDiagnostics(id: Long, status: String, errorCode: String?, errorMessage: String?, failedAt: Long?, updatedAt: Long) {
+            val idx = rows.indexOfFirst { it.id == id }
+            if (idx >= 0) rows[idx] = rows[idx].copy(status = status, lastErrorCode = errorCode, lastErrorMessage = errorMessage, failedAt = failedAt, updatedAt = updatedAt)
+        }
+        override suspend fun retryFailedItem(id: Long, updatedAt: Long): Int {
+            val idx = rows.indexOfFirst { it.id == id }
+            if (idx >= 0 && rows[idx].status == SyncQueueEntity.STATUS_FAILED) {
+                rows[idx] = rows[idx].copy(status = SyncQueueEntity.STATUS_PENDING, lastErrorCode = null, lastErrorMessage = null, failedAt = null, updatedAt = updatedAt)
+                return 1
+            }
+            return 0
+        }
+        override suspend fun retryAllFailed(updatedAt: Long): Int {
+            var count = 0
+            rows.forEachIndexed { idx, entity ->
+                if (entity.status == SyncQueueEntity.STATUS_FAILED) {
+                    rows[idx] = entity.copy(status = SyncQueueEntity.STATUS_PENDING, lastErrorCode = null, lastErrorMessage = null, failedAt = null, updatedAt = updatedAt)
+                    count++
+                }
+            }
+            return count
+        }
+        override fun observeFailedItems(): kotlinx.coroutines.flow.Flow<List<SyncQueueEntity>> = kotlinx.coroutines.flow.flowOf(rows.filter { it.status == SyncQueueEntity.STATUS_FAILED })
+        override suspend fun getStaleUploadingItems(cutoffTime: Long) = rows.filter { it.status == SyncQueueEntity.STATUS_UPLOADING && it.updatedAt < cutoffTime }
+        override suspend fun recoverStaleUploading(cutoffTime: Long, updatedAt: Long): Int {
+            var count = 0
+            rows.forEachIndexed { idx, e -> if (e.status == SyncQueueEntity.STATUS_UPLOADING && e.updatedAt < cutoffTime) { rows[idx] = e.copy(status = SyncQueueEntity.STATUS_PENDING, updatedAt = updatedAt); count++ } }
+            return count
+        }
     }
 
     @Test
