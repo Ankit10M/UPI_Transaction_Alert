@@ -72,5 +72,7 @@ class StaleUploadRecoveryWorker @AssistedInject constructor(
     companion object {
         const val TAG = "StaleRecoveryWorker"
         const val WORK_NAME = "stale_upload_recovery_work"
+        /** One-time immediate work (startup recovery) uses distinct name to avoid collision with periodic. */
+        const val WORK_NAME_IMMEDIATE = "stale_upload_recovery_work_immediate"
     }
 }

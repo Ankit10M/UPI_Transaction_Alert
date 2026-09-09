@@ -1,9 +1,15 @@
 package com.upivoicealert.network
 
-import com.upivoicealert.BuildConfig
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
+/**
+ * Legacy wrapper kept for test compatibility. Production code now obtains
+ * APIs from the centrally-configured [retrofit2.Retrofit] instance in
+ * [com.upivoicealert.di.AuthModule] which uses [com.upivoicealert.config.EnvironmentProvider].
+ */
 object ApiClient {
-    fun create(retrofitBuilder: Retrofit.Builder): AuthApi = retrofitBuilder.baseUrl(BuildConfig.BASE_URL).addConverterFactory(GsonConverterFactory.create()).build().create(AuthApi::class.java)
+    fun create(retrofit: Retrofit): AuthApi = retrofit.create(AuthApi::class.java)
+
+    @Deprecated("Use Retrofit instance from AuthModule instead — baseUrl is already configured")
+    fun create(builder: Retrofit.Builder): AuthApi = builder.build().create(AuthApi::class.java)
 }

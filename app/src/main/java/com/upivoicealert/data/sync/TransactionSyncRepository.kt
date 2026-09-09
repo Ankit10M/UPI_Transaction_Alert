@@ -123,6 +123,7 @@ class TransactionSyncRepository @Inject constructor(
         val deviceId = try { deviceIdProvider.getDeviceId() } catch (_: Exception) { "unknown-device" }
         val uploads = mutableListOf<TransactionUploadDto>()
         val missingIds = mutableListOf<Long>()
+        var missingCount = 0
 
         for (queueItem in batch) {
             val txn = transactionMap[queueItem.entityId]
@@ -133,6 +134,7 @@ class TransactionSyncRepository @Inject constructor(
                     ERROR_CODE_VALIDATION,
                     ERROR_MSG_MISSING
                 )
+                missingCount++
                 continue
             }
             uploads.add(
@@ -150,8 +152,8 @@ class TransactionSyncRepository @Inject constructor(
         }
 
         if (uploads.isEmpty()) {
-            // All missing were marked FAILED, treat as partial
-            return if (missingIds.isNotEmpty()) SyncResult.PartialSuccess(0, missingIds.size) else SyncResult.Success
+            // All missing were marked FAILED — report as permanent failure batch
+            return if (missingCount > 0) SyncResult.Error("Missing transactions: $missingCount") else SyncResult.Success
         }
 
         return try {
@@ -195,6 +197,15 @@ class TransactionSyncRepository @Inject constructor(
                     }
                     SyncResult.SessionExpired
                 }
+                code == 429 || code == 408 -> {
+                    // Rate limited / request timeout — transient, retry with backoff; never mark FAILED
+                    batch.forEach {
+                        val reverted = syncQueueDao.updateStatusIfExpected(it.id, SyncQueueEntity.STATUS_UPLOADING, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis())
+                        if (reverted == 0) Log.w(TAG, "Skip PENDING revert ($code) for ${it.id}")
+                    }
+                    lastRetryCause = RetryCause.SERVER
+                    SyncResult.Retry
+                }
                 code in 500..599 -> {
                     batch.forEach {
                         val reverted = syncQueueDao.updateStatusIfExpected(it.id, SyncQueueEntity.STATUS_UPLOADING, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis())
@@ -215,7 +226,7 @@ class TransactionSyncRepository @Inject constructor(
                     SyncResult.Error("Validation error: ${e.message()}")
                 }
                 code in 400..499 -> {
-                    // Other 4xx (except 400/401) -> also permanent but generic message
+                    // Other 4xx (except 400/401/429/408) -> also permanent but generic message
                     batch.forEach {
                         markFailedWithDiagnostics(
                             it.id,
@@ -235,12 +246,16 @@ class TransactionSyncRepository @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Unexpected sync failure", e)
+            // Covers JsonSyntaxException, malformed JSON, empty body, HTML error page etc.
+            // Never mark SYNCED; revert to PENDING and retry — response validation failure is transient.
+            // Diagnostics remain sanitized (no raw body persisted).
+            Log.w(TAG, "Unexpected sync failure (likely malformed response), will retry", e)
             batch.forEach {
                 val reverted = syncQueueDao.updateStatusIfExpected(it.id, SyncQueueEntity.STATUS_UPLOADING, SyncQueueEntity.STATUS_PENDING, System.currentTimeMillis())
                 if (reverted == 0) Log.w(TAG, "Skip PENDING revert (exception) for ${it.id}")
             }
-            SyncResult.Error(e.message ?: "Unknown error")
+            lastRetryCause = RetryCause.SERVER
+            SyncResult.Retry
         }
     }
 

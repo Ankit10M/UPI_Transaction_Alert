@@ -12,7 +12,14 @@ const { merchantRouterFor } = require('./modules/merchant/router');
 const { devicesRouterFor } = require('./modules/devices/router');
 const { transactionsRouterFor } = require('./modules/transactions/router');
 
+const crypto = require('crypto');
 const app = express();
+
+// Safe request correlation — random UUID, never derived from PII/JWT
+app.use((req, _res, next) => {
+  req.requestId = req.get('X-Request-Id') || crypto.randomUUID();
+  next();
+});
 
 // Middleware
 app.use(helmet());
@@ -20,9 +27,16 @@ app.use(cors({
   origin: config.CORS_ORIGIN,
   credentials: true
 }));
-app.use(morgan('combined'));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+// Phase 8.1: verbose HTTP logging only in non-production. Production uses minimal/tiny to avoid leaking sensitive data.
+if (config.NODE_ENV !== 'production') {
+  app.use(morgan('combined'));
+} else {
+  app.use(morgan('tiny', {
+    skip: (req) => req.path === '/health'
+  }));
+}
+app.use(express.json({ limit: '256kb' }));
+app.use(express.urlencoded({ extended: true, limit: '256kb' }));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -62,19 +76,23 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// Error handling middleware
+// Error handling middleware — safe classification, no stack/body leak; includes requestId
 app.use((err, req, res, next) => {
   const status = Number.isInteger(err.status) ? err.status : 500;
+  const errorCode = status >= 500 ? 'INTERNAL_SERVER_ERROR' : (err.code || 'REQUEST_FAILED');
   if (config.NODE_ENV === 'production') {
-    console.error('Request failed', { method: req.method, path: req.path, status, errorName: err.name });
-    return res.status(status).json({ error: { code: status >= 500 ? 'INTERNAL_SERVER_ERROR' : 'REQUEST_FAILED' } });
+    console.error('Request failed', { requestId: req.requestId, method: req.method, path: req.path, status, errorCode });
+    return res.status(status).json({ error: { code: errorCode, requestId: req.requestId } });
   }
   console.error(err);
-  return res.status(status).json({ error: { code: err.code || 'REQUEST_FAILED', message: err.message } });
+  return res.status(status).json({ error: { code: err.code || 'REQUEST_FAILED', message: err.message, requestId: req.requestId } });
 });
 
-// 404 handler
+// 404 handler — production does not echo probed path (enumeration resistance)
 app.use('*', (req, res) => {
+  if (config.NODE_ENV === 'production') {
+    return res.status(404).json({ error: { code: 'NOT_FOUND' } });
+  }
   res.status(404).json({
     error: {
       message: 'Route not found',

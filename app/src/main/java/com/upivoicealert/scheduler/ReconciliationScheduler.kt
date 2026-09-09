@@ -34,7 +34,7 @@ class ReconciliationScheduler @Inject constructor(
             .addTag(TransactionReconciliationWorker.WORK_NAME)
             .build()
         workManager.enqueueUniqueWork(
-            TransactionReconciliationWorker.WORK_NAME,
+            TransactionReconciliationWorker.WORK_NAME_IMMEDIATE,
             ExistingWorkPolicy.KEEP,
             request
         )
@@ -42,5 +42,6 @@ class ReconciliationScheduler @Inject constructor(
 
     fun cancel() {
         workManager.cancelUniqueWork(TransactionReconciliationWorker.WORK_NAME)
+        workManager.cancelUniqueWork(TransactionReconciliationWorker.WORK_NAME_IMMEDIATE)
     }
 }

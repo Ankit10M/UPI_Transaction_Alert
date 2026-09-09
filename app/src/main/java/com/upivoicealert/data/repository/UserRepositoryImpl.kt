@@ -1,7 +1,8 @@
 package com.upivoicealert.data.repository
 
-import android.util.Log
+import com.upivoicealert.BuildConfig
 import com.upivoicealert.data.datastore.UserProfileStore
+import com.upivoicealert.logging.AppLogger
 import com.upivoicealert.domain.model.MerchantUser
 import com.upivoicealert.domain.repository.UserRepository
 import com.upivoicealert.utils.MerchantIdGenerator
@@ -84,7 +85,7 @@ class UserRepositoryImpl @Inject constructor(
         profileStore.setShopName(shopName)
         profileStore.setMobileNumber(phoneNumber)
 
-        Log.i(TAG, "PROFILE_SAVED merchantId=$merchantId name=$name shopName=$shopName phone=$phoneNumber createdAt=$createdAt")
+        if (BuildConfig.DEBUG) AppLogger.d(TAG, "PROFILE_SAVED merchantId=$merchantId createdAt=$createdAt")
     }
 
     /**

@@ -34,7 +34,7 @@ class SyncIntegrityAuditScheduler @Inject constructor(
             .addTag(SyncIntegrityAuditWorker.WORK_NAME)
             .build()
         workManager.enqueueUniqueWork(
-            SyncIntegrityAuditWorker.WORK_NAME,
+            SyncIntegrityAuditWorker.WORK_NAME_IMMEDIATE,
             ExistingWorkPolicy.KEEP,
             request
         )
@@ -42,5 +42,6 @@ class SyncIntegrityAuditScheduler @Inject constructor(
 
     fun cancel() {
         workManager.cancelUniqueWork(SyncIntegrityAuditWorker.WORK_NAME)
+        workManager.cancelUniqueWork(SyncIntegrityAuditWorker.WORK_NAME_IMMEDIATE)
     }
 }

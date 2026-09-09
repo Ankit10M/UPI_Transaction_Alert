@@ -4,5 +4,9 @@ enum class SyncDiagnosticCategory {
     SYNC,
     RECONCILIATION,
     STALE_RECOVERY,
-    INTEGRITY_AUDIT
+    INTEGRITY_AUDIT,
+    AUTH,
+    PAYMENT_PIPELINE,
+    API,
+    APP_HEALTH
 }

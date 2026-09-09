@@ -1,7 +1,7 @@
 package com.upivoicealert.domain.usecases
 
-import android.util.Log
 import com.upivoicealert.domain.model.NotificationSource
+import com.upivoicealert.logging.AppLogger
 import com.upivoicealert.domain.model.ServiceStatus
 import com.upivoicealert.domain.model.Transaction
 import com.upivoicealert.domain.model.TransactionStatus
@@ -58,35 +58,35 @@ class ProcessTransactionUseCase @Inject constructor(
         postTime: Long,
         notificationKey: String? = null
     ): ProcessingResult {
-        Log.i(TAG, "PROCESS_START package=$packageName postTime=$postTime rawText=$rawText")
+        AppLogger.d(TAG, "PROCESS_START package=$packageName postTime=$postTime rawText=$rawText")
 
         // The transaction pipeline ALWAYS executes. The Home screen START/STOP
         // control no longer gates processing — it only gates the TTS announcement
         // (see process()). Payments are detected, saved and counted in history and
         // the business summary in both states; only the spoken alert is affected.
         val text = textCleaner.clean(rawText)
-        Log.i(TAG, "CLEANED_TEXT package=$packageName text=$text")
+        AppLogger.d(TAG, "CLEANED_TEXT package=$packageName text=$text")
         if (text.isBlank()) {
-            Log.i(TAG, "FILTER_FAIL package=$packageName reason=empty after cleaning")
+            AppLogger.d(TAG, "FILTER_FAIL package=$packageName reason=empty after cleaning")
             return ProcessingResult.NOT_A_PAYMENT
         }
 
         if (!filter.isPaymentCandidate(packageName, text)) {
-            Log.i(TAG, "FILTER_FAIL package=$packageName")
+            AppLogger.d(TAG, "FILTER_FAIL package=$packageName")
             return ProcessingResult.NOT_A_PAYMENT
         }
-        Log.i(TAG, "FILTER_PASS package=$packageName")
+        AppLogger.d(TAG, "FILTER_PASS package=$packageName")
 
         val classification = classifier.classify(text)
-        Log.i(TAG, "CLASSIFICATION_RESULT package=$packageName type=${classification.type} status=${classification.status}")
+        AppLogger.d(TAG, "CLASSIFICATION_RESULT package=$packageName type=${classification.type} status=${classification.status}")
         if (classification.type != TransactionType.RECEIVED || classification.status != TransactionStatus.SUCCESS) {
             return ProcessingResult.IGNORED
         }
 
-        Log.i(TAG, "PARSER_SEARCH package=$packageName")
+        AppLogger.d(TAG, "PARSER_SEARCH package=$packageName")
         val parser = resolver.resolve(packageName, text)
         if (parser == null) {
-            Log.i(TAG, "PARSER_NOT_FOUND package=$packageName")
+            AppLogger.d(TAG, "PARSER_NOT_FOUND package=$packageName")
             transactionRepository.addUnparsedNotification(
                 UnparsedNotification(
                     id = UUID.randomUUID().toString(),
@@ -98,12 +98,12 @@ class ProcessTransactionUseCase @Inject constructor(
             )
             return ProcessingResult.IGNORED
         }
-        Log.i(TAG, "PARSER_FOUND package=$packageName parser=${parser.version}")
+        AppLogger.d(TAG, "PARSER_FOUND package=$packageName parser=${parser.version}")
 
         val parsed = try {
             parser.parse(text, postTime)
         } catch (e: Exception) {
-            Log.w(TAG, "Parser ${parser.version} failed", e)
+            AppLogger.w(TAG, "Parser ${parser.version} failed", e)
             transactionRepository.addUnparsedNotification(
                 UnparsedNotification(
                     id = UUID.randomUUID().toString(),
@@ -117,9 +117,9 @@ class ProcessTransactionUseCase @Inject constructor(
         }
 
         val parsedWithAppLabel = parsed.copy(upiApp = PackageNames.labelFor(packageName))
-        Log.i(TAG, "parsed amount=${parsedWithAppLabel.amount}")
-        Log.i(TAG, "parsed sender=${parsedWithAppLabel.sender}")
-        Log.i(TAG, "parsed app=${parsedWithAppLabel.upiApp}")
+        AppLogger.d(TAG, "parsed amount=${parsedWithAppLabel.amount}")
+        AppLogger.d(TAG, "parsed sender=${parsedWithAppLabel.sender}")
+        AppLogger.d(TAG, "parsed app=${parsedWithAppLabel.upiApp}")
         return when (val validation = validator.validate(parsedWithAppLabel)) {
             is ValidationResult.Invalid -> {
                 transactionRepository.addUnparsedNotification(
@@ -166,7 +166,7 @@ class ProcessTransactionUseCase @Inject constructor(
 
         val inserted = transactionRepository.insertTransactionIfNotDuplicate(transactionWithVoice)
         if (!inserted) {
-            Log.i(DUP_TAG, "SKIP_TRANSACTION id=${transaction.id} amount=${transaction.amount} sender=${transaction.sender} app=${transaction.upiApp} incomingRef=${transaction.transactionId ?: "<none>"} reason=duplicate")
+            AppLogger.d(DUP_TAG, "SKIP_TRANSACTION id=${transaction.id} amount=${transaction.amount} sender=${transaction.sender} app=${transaction.upiApp} incomingRef=${transaction.transactionId ?: "<none>"} reason=duplicate")
             return ProcessingResult.DUPLICATE
         }
 
@@ -184,10 +184,10 @@ class ProcessTransactionUseCase @Inject constructor(
                 val effectiveLanguage = if (fellBackToEnglish) VoiceLanguage.ENGLISH else language
                 voiceEngine.speak(announcementTemplates.build(transactionWithVoice, effectiveLanguage))
             } catch (e: Exception) {
-                Log.w(TAG, "Voice announcement failed (transaction already saved)", e)
+                AppLogger.w(TAG, "Voice announcement failed (transaction already saved)", e)
             }
         } else {
-            Log.d(TAG, "Skipping announcement: voice disabled")
+            AppLogger.d(TAG, "Skipping announcement: voice disabled")
         }
 
         return ProcessingResult.SAVED

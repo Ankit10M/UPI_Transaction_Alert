@@ -34,7 +34,7 @@ class StaleUploadRecoveryScheduler @Inject constructor(
             .addTag(StaleUploadRecoveryWorker.WORK_NAME)
             .build()
         workManager.enqueueUniqueWork(
-            StaleUploadRecoveryWorker.WORK_NAME,
+            StaleUploadRecoveryWorker.WORK_NAME_IMMEDIATE,
             ExistingWorkPolicy.KEEP,
             request
         )
@@ -42,5 +42,6 @@ class StaleUploadRecoveryScheduler @Inject constructor(
 
     fun cancel() {
         workManager.cancelUniqueWork(StaleUploadRecoveryWorker.WORK_NAME)
+        workManager.cancelUniqueWork(StaleUploadRecoveryWorker.WORK_NAME_IMMEDIATE)
     }
 }

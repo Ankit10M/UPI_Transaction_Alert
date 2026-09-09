@@ -95,5 +95,7 @@ class TransactionReconciliationWorker @AssistedInject constructor(
     companion object {
         const val TAG = "ReconciliationWorker"
         const val WORK_NAME = "transaction_reconciliation_work"
+        /** One-time immediate work uses distinct name to avoid collision with periodic. */
+        const val WORK_NAME_IMMEDIATE = "transaction_reconciliation_work_immediate"
     }
 }

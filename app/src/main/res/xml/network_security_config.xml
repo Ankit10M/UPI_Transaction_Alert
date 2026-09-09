@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 8.4: Production network security — cleartext traffic is never permitted.
+     Debug still uses HTTPS localhost/LAN via BuildConfig.BASE_URL; release enforces HTTPS. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

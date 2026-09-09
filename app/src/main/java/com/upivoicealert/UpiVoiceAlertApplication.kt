@@ -32,10 +32,14 @@ class UpiVoiceAlertApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
-        WorkScheduler.schedulePeriodic(this)
-        reconciliationScheduler.schedulePeriodic()
-        staleUploadRecoveryScheduler.schedulePeriodic()
-        staleUploadRecoveryScheduler.scheduleNow()
-        syncIntegrityAuditScheduler.schedulePeriodic()
+        // Startup scheduling must never crash the application or block payment processing.
+        // Each scheduler is wrapped individually so one failure does not prevent others.
+        // Payment pipeline (NotificationListenerService -> Room -> TTS) is independent of
+        // these maintenance workers.
+        try { WorkScheduler.schedulePeriodic(this) } catch (_: Exception) { }
+        try { reconciliationScheduler.schedulePeriodic() } catch (_: Exception) { }
+        try { staleUploadRecoveryScheduler.schedulePeriodic() } catch (_: Exception) { }
+        try { staleUploadRecoveryScheduler.scheduleNow() } catch (_: Exception) { }
+        try { syncIntegrityAuditScheduler.schedulePeriodic() } catch (_: Exception) { }
     }
 }

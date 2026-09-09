@@ -18,6 +18,7 @@ function verifyAccessToken(token, ignoreExpiration = false) {
   return jwt.verify(token, config.JWT_SECRET, {
     issuer: JWT_ISSUER,
     audience: JWT_AUDIENCE,
+    algorithms: ['HS256'],
     ignoreExpiration,
   });
 }

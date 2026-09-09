@@ -9,6 +9,9 @@ import com.upivoicealert.parser.gpay.GPayParserV1
 import com.upivoicealert.parser.kotak.KotakParserV1
 import com.upivoicealert.parser.paytm.PaytmParserV1
 import com.upivoicealert.parser.phonepe.PhonePeParserV1
+import com.upivoicealert.config.BuildConfigEnvironmentProvider
+import com.upivoicealert.config.EnvironmentProvider
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -73,4 +76,8 @@ object AppModule {
         KotakParserV1(),
         GenericReceivedParserV1()
     )
+
+    @Provides
+    @Singleton
+    fun provideEnvironmentProvider(impl: BuildConfigEnvironmentProvider): EnvironmentProvider = impl
 }

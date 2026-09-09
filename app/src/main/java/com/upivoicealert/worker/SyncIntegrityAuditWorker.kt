@@ -83,5 +83,7 @@ class SyncIntegrityAuditWorker @AssistedInject constructor(
     companion object {
         const val TAG = "SyncIntegrityAuditWorker"
         const val WORK_NAME = "sync_integrity_audit_work"
+        /** One-time immediate work uses distinct name to avoid collision with periodic. */
+        const val WORK_NAME_IMMEDIATE = "sync_integrity_audit_work_immediate"
     }
 }
