@@ -56,6 +56,9 @@ class TransactionSyncDiagnosticsTest {
         override suspend fun getEligibleMissingQueueUuids(limit: Int, offset: Int): List<String> = emptyList()
         override suspend fun countEligibleMissingQueue(): Int = 0
         override suspend fun countEligibleTransactions(): Int = 0
+        override suspend fun countEligibleForAudit(): Int = 0
+        override suspend fun countMissingQueueForAudit(): Int = 0
+        override suspend fun countScannedTransactionsForAudit(): Int = 0
     }
 
     private class FakeSyncQueueDao : SyncQueueDao {
@@ -121,7 +124,14 @@ class TransactionSyncDiagnosticsTest {
             rows.forEachIndexed { idx, e -> if (e.status == SyncQueueEntity.STATUS_UPLOADING && e.updatedAt < cutoffTime) { rows[idx] = e.copy(status = SyncQueueEntity.STATUS_PENDING, updatedAt = updatedAt); c++ } }
             return c
         }
-    }
+        override suspend fun countTransactionQueueItems(): Int = 0
+        override suspend fun countAllQueueItems(): Int = 0
+        override suspend fun countOrphanedQueueItems(): Int = 0
+        override suspend fun countDuplicateExtraRows(): Int = 0
+        override suspend fun countDuplicateGroups(): Int = 0
+        override suspend fun countInvalidQueueItems(): Int = 0
+        override suspend fun countStaleUploading(cutoffTime: Long): Int = 0
+}
 
     private fun createRepo(transactionDao: FakeTransactionDao, dao: FakeSyncQueueDao, api: TransactionSyncApi) =
         TransactionSyncRepository(dao, transactionDao, api, object : DeviceIdProvider { override suspend fun getDeviceId() = "test-device" })

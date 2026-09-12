@@ -74,7 +74,14 @@ class ProcessDeathRecoveryTest {
         override fun observeFailedItems() = flowOf(rows.filter { it.status==SyncQueueEntity.STATUS_FAILED })
         override suspend fun getStaleUploadingItems(cutoffTime: Long) = rows.filter { it.status==SyncQueueEntity.STATUS_UPLOADING && it.updatedAt < cutoffTime }
         override suspend fun recoverStaleUploading(cutoffTime: Long, updatedAt: Long): Int { var c=0; rows.forEachIndexed{i,e-> if(e.status==SyncQueueEntity.STATUS_UPLOADING && e.updatedAt < cutoffTime){ rows[i]=e.copy(status=SyncQueueEntity.STATUS_PENDING, updatedAt=updatedAt); c++ } }; return c }
-    }
+        override suspend fun countTransactionQueueItems(): Int = 0
+        override suspend fun countAllQueueItems(): Int = 0
+        override suspend fun countOrphanedQueueItems(): Int = 0
+        override suspend fun countDuplicateExtraRows(): Int = 0
+        override suspend fun countDuplicateGroups(): Int = 0
+        override suspend fun countInvalidQueueItems(): Int = 0
+        override suspend fun countStaleUploading(cutoffTime: Long): Int = 0
+}
 
     private class PersistentFakeTxDao : TransactionDao {
         val rows = mutableMapOf<String, TransactionEntity>()

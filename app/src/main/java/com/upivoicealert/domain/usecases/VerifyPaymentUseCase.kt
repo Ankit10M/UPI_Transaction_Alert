@@ -1,8 +1,8 @@
 package com.upivoicealert.domain.usecases
 
-import android.util.Log
 import com.upivoicealert.domain.model.VerificationResult
 import com.upivoicealert.domain.repository.PaymentVerificationRepository
+import com.upivoicealert.logging.AppLogger
 import com.upivoicealert.utils.Constants
 import javax.inject.Inject
 
@@ -20,16 +20,16 @@ class VerifyPaymentUseCase @Inject constructor(
 
     suspend operator fun invoke(amount: Double): VerificationResult {
         val since = System.currentTimeMillis() - Constants.VERIFICATION_WINDOW_MS
-        Log.i(TAG, "VERIFY_CHECK amount=$amount windowMs=${Constants.VERIFICATION_WINDOW_MS} since=$since")
+        AppLogger.d(TAG, "VERIFY_CHECK windowMs=${Constants.VERIFICATION_WINDOW_MS} since=$since")
         val transaction = repository.findRecentReceived(amount, since)
         return if (transaction != null) {
-            Log.i(
+            AppLogger.d(
                 TAG,
-                "VERIFY_MATCH amount=$amount transactionId=${transaction.id} sender=${transaction.sender} app=${transaction.upiApp} createdAt=${transaction.createdAt}"
+                "VERIFY_MATCH transactionId=${transaction.id} createdAt=${transaction.createdAt}"
             )
             VerificationResult.Verified(transaction)
         } else {
-            Log.i(TAG, "VERIFY_NO_MATCH amount=$amount since=$since — payment not found within window")
+            AppLogger.d(TAG, "VERIFY_NO_MATCH since=$since — payment not found within window")
             VerificationResult.NotFound
         }
     }

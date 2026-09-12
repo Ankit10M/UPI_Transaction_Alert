@@ -198,7 +198,10 @@ class TransactionSyncQueueActivationTest {
         override suspend fun getEligibleMissingQueueUuids(limit: Int, offset: Int): List<String> = emptyList()
         override suspend fun countEligibleMissingQueue(): Int = 0
         override suspend fun countEligibleTransactions(): Int = 0
-    }
+        override suspend fun countEligibleForAudit(): Int = 0
+        override suspend fun countMissingQueueForAudit(): Int = 0
+        override suspend fun countScannedTransactionsForAudit(): Int = 0
+}
 
     private class FakeSyncQueueDao : SyncQueueDao {
         val rows = mutableListOf<SyncQueueEntity>()
@@ -231,7 +234,17 @@ class TransactionSyncQueueActivationTest {
         override fun observeFailedItems(): kotlinx.coroutines.flow.Flow<List<SyncQueueEntity>> = kotlinx.coroutines.flow.flowOf(emptyList())
         override suspend fun getStaleUploadingItems(cutoffTime: Long) = emptyList<SyncQueueEntity>()
         override suspend fun recoverStaleUploading(cutoffTime: Long, updatedAt: Long) = 0
-    }
+        override suspend fun updateStatusIfExpected(id: Long, expectedStatus: String, newStatus: String, updatedAt: Long): Int { val idx=rows.indexOfFirst{it.id==id}; if(idx>=0 && rows[idx].status==expectedStatus){ rows[idx]=rows[idx].copy(status=newStatus, updatedAt=updatedAt); return 1 }; return 0 }
+        override suspend fun incrementRetryCountIfExpected(id: Long, expectedStatus: String, updatedAt: Long): Int { val idx=rows.indexOfFirst{it.id==id}; if(idx>=0 && rows[idx].status==expectedStatus){ rows[idx]=rows[idx].copy(retryCount=rows[idx].retryCount+1, updatedAt=updatedAt); return 1 }; return 0 }
+        override suspend fun markFailedWithDiagnosticsIfExpected(id: Long, status: String, errorCode: String?, errorMessage: String?, failedAt: Long?, updatedAt: Long, expectedStatus: String): Int { val idx=rows.indexOfFirst{it.id==id}; if(idx>=0 && rows[idx].status==expectedStatus){ rows[idx]=rows[idx].copy(status=status, lastErrorCode=errorCode, lastErrorMessage=errorMessage, failedAt=failedAt, updatedAt=updatedAt); return 1 }; return 0 }
+        override suspend fun countTransactionQueueItems(): Int = rows.count { it.entityType == SyncQueueEntity.ENTITY_TYPE_TRANSACTION }
+        override suspend fun countAllQueueItems(): Int = rows.size
+        override suspend fun countOrphanedQueueItems(): Int = 0
+        override suspend fun countDuplicateExtraRows(): Int = 0
+        override suspend fun countDuplicateGroups(): Int = 0
+        override suspend fun countInvalidQueueItems(): Int = 0
+        override suspend fun countStaleUploading(cutoffTime: Long): Int = rows.count { it.status == SyncQueueEntity.STATUS_UPLOADING && it.updatedAt < cutoffTime }
+}
 
     private class FakeUnparsedDao : UnparsedNotificationDao {
         override fun observeAll(): Flow<List<com.upivoicealert.data.database.UnparsedNotificationEntity>> = flowOf(emptyList())

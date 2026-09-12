@@ -126,7 +126,7 @@ interface TransactionDao {
         AND TRIM(transactionUuid) != ''
         """
     )
-    suspend fun countEligibleForAudit(): Int = 0
+    suspend fun countEligibleForAudit(): Int
 
     @Query(
         """
@@ -140,8 +140,8 @@ interface TransactionDao {
         )
         """
     )
-    suspend fun countMissingQueueForAudit(): Int = 0
+    suspend fun countMissingQueueForAudit(): Int
 
     @Query("SELECT COUNT(*) FROM transactions WHERE TRIM(transactionUuid) != ''")
-    suspend fun countScannedTransactionsForAudit(): Int = 0
+    suspend fun countScannedTransactionsForAudit(): Int
 }

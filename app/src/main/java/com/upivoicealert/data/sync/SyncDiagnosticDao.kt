@@ -19,10 +19,10 @@ interface SyncDiagnosticDao {
     fun observeRecent(limit: Int): Flow<List<SyncDiagnosticEventEntity>>
 
     @Query("SELECT COUNT(*) FROM sync_diagnostic_events")
-    suspend fun count(): Int = 0
+    suspend fun count(): Int
 
     @Query("DELETE FROM sync_diagnostic_events WHERE createdAt < :cutoff")
-    suspend fun deleteOlderThan(cutoff: Long): Int = 0
+    suspend fun deleteOlderThan(cutoff: Long): Int
 
     @Query("DELETE FROM sync_diagnostic_events")
     suspend fun clearAll()
@@ -38,5 +38,5 @@ interface SyncDiagnosticDao {
         )
         """
     )
-    suspend fun trimToMaxCount(maxCount: Int): Int = 0
+    suspend fun trimToMaxCount(maxCount: Int): Int
 }

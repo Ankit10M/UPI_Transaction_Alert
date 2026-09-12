@@ -1,9 +1,9 @@
 package com.upivoicealert.domain.usecases
 
-import android.util.Log
 import com.upivoicealert.domain.model.BusinessSummary
 import com.upivoicealert.domain.model.Transaction
 import com.upivoicealert.domain.repository.TransactionRepository
+import com.upivoicealert.logging.AppLogger
 import com.upivoicealert.utils.DateTimeUtils
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
@@ -28,11 +28,9 @@ class BusinessSummaryUseCase @Inject constructor(
         repository.observeReceivedSuccessSince(DateTimeUtils.startOfToday())
             .map { transactions ->
                 computeSummary(transactions).also { summary ->
-                    Log.i(
+                    AppLogger.d(
                         TAG,
-                        "BUSINESS_SUMMARY total=${summary.totalCollection} count=${summary.transactionCount} " +
-                            "average=${summary.averageTransactionValue} largest=${summary.largestPayment} " +
-                            "peakHour=${summary.peakPaymentHour ?: "none"}"
+                        "BUSINESS_SUMMARY count=${summary.transactionCount} peakHour=${summary.peakPaymentHour ?: "none"}"
                     )
                 }
             }

@@ -2,6 +2,7 @@ package com.upivoicealert.data.repository
 
 import android.util.Log
 import androidx.room.withTransaction
+import com.upivoicealert.logging.AppLogger
 import com.upivoicealert.data.database.AppDatabase
 import com.upivoicealert.data.database.TransactionDao
 import com.upivoicealert.data.database.UnparsedNotificationDao
@@ -71,11 +72,10 @@ class TransactionRepositoryImpl @Inject constructor(
         val windowEnd = transaction.createdAt + Constants.DEDUP_WINDOW_MS
         val fingerprint = TransactionFingerprint.compute(transaction)
         val incomingRef = transaction.transactionId?.trim()?.takeIf { it.isNotEmpty() }
-        Log.i(
+        AppLogger.d(
             DUP_TAG,
-            "CHECK_START amount=${transaction.amount} sender=${transaction.sender} app=${transaction.upiApp} " +
-                "package=${transaction.packageName} referenceId=${incomingRef ?: "<none>"} " +
-                "generatedFingerprint=${fingerprint ?: "<none>"} createdAt=${transaction.createdAt} " +
+            "CHECK_START package=${transaction.packageName} hasRef=${incomingRef != null} " +
+                "hasFingerprint=${fingerprint != null} createdAt=${transaction.createdAt} " +
                 "windowStart=$windowStart windowEnd=$windowEnd"
         )
 
@@ -83,17 +83,15 @@ class TransactionRepositoryImpl @Inject constructor(
         if (incomingRef != null) {
             val existing = transactionDao.findByReferenceIdGlobal(incomingRef)
             if (existing != null) {
-                Log.i(
+                AppLogger.d(
                     DUP_TAG,
-                    "DECISION=DUPLICATE matched=referenceId reason=same_reference_id " +
-                        "incomingRef=$incomingRef existingId=${existing.id} existingApp=${existing.upiApp} " +
-                        "existingRef=${existing.transactionId ?: "<none>"}"
+                    "DECISION=DUPLICATE matched=referenceId reason=same_reference_id existingId=${existing.id}"
                 )
                 return true
             }
-            Log.i(
+            AppLogger.d(
                 DUP_TAG,
-                "DECISION=NOT_DUPLICATE_YET reason=reference_id_not_found checkedRef=$incomingRef"
+                "DECISION=NOT_DUPLICATE_YET reason=reference_id_not_found"
             )
         }
 
@@ -105,33 +103,28 @@ class TransactionRepositoryImpl @Inject constructor(
                 transactionDao.findByFingerprint(fingerprint, windowStart, windowEnd)
             }
             if (existing != null) {
-                Log.i(
+                AppLogger.d(
                     DUP_TAG,
-                    "DECISION=DUPLICATE matched=fingerprint reason=cross_source_fingerprint " +
-                        "amount=${transaction.amount} sender=${transaction.sender} fingerprint=$fingerprint " +
-                        "existingId=${existing.id} existingApp=${existing.upiApp} " +
-                        "existingRef=${existing.transactionId ?: "<none>"}"
+                    "DECISION=DUPLICATE matched=fingerprint reason=cross_source_fingerprint existingId=${existing.id}"
                 )
                 return true
             }
-            Log.i(
+            AppLogger.d(
                 DUP_TAG,
-                "DECISION=NOT_DUPLICATE_YET reason=fingerprint_no_match fingerprint=$fingerprint"
+                "DECISION=NOT_DUPLICATE_YET reason=fingerprint_no_match"
             )
         }
 
         // Priority 3 (fallback): exact same notification reposted within the window.
         val existing = transactionDao.findExactDuplicate(transaction.rawNotification, windowStart, windowEnd)
         if (existing != null) {
-            Log.i(
+            AppLogger.d(
                 DUP_TAG,
-                "DECISION=DUPLICATE matched=rawNotification reason=exact_notification_reposted " +
-                    "windowStart=$windowStart windowEnd=$windowEnd existingId=${existing.id} " +
-                    "existingCreatedAt=${existing.createdAt}"
+                "DECISION=DUPLICATE matched=rawNotification reason=exact_notification_reposted existingId=${existing.id}"
             )
             return true
         }
-        Log.i(
+        AppLogger.d(
             DUP_TAG,
             "DECISION=NOT_DUPLICATE reason=no_match_found windowStart=$windowStart windowEnd=$windowEnd"
         )
@@ -140,7 +133,7 @@ class TransactionRepositoryImpl @Inject constructor(
 
     override suspend fun insertTransactionIfNotDuplicate(transaction: Transaction): Boolean {
         if (isDuplicate(transaction)) {
-            Log.i(DUP_TAG, "IGNORED id=${transaction.id} incomingRef=${transaction.transactionId ?: "<none>"} reason=duplicate")
+            AppLogger.d(DUP_TAG, "IGNORED id=${transaction.id} reason=duplicate")
             return false
         }
         val fingerprint = TransactionFingerprint.compute(transaction)
@@ -169,12 +162,12 @@ class TransactionRepositoryImpl @Inject constructor(
                                 updatedAt = now
                             )
                         )
-                        Log.i(DUP_TAG, "ENQUEUED syncQueue entityId=${withFingerprint.transactionUuid}")
+                        AppLogger.d(DUP_TAG, "ENQUEUED syncQueue entityId=${withFingerprint.transactionUuid}")
                     }
-                    Log.i(
+                    AppLogger.d(
                         DUP_TAG,
-                        if (inserted) "INSERTED id=${withFingerprint.id} uuid=${withFingerprint.transactionUuid} incomingRef=${withFingerprint.transactionId ?: "<none>"} fingerprint=$fingerprint"
-                        else "INSERT_CONFLICT id=${withFingerprint.id} incomingRef=${withFingerprint.transactionId ?: "<none>"}"
+                        if (inserted) "INSERTED id=${withFingerprint.id} uuid=${withFingerprint.transactionUuid}"
+                        else "INSERT_CONFLICT id=${withFingerprint.id}"
                     )
                 }
                 if (inserted) {
@@ -188,10 +181,10 @@ class TransactionRepositoryImpl @Inject constructor(
         } else {
             val rowId = transactionDao.insert(withFingerprint.toEntity())
             val inserted = rowId != -1L
-            Log.i(
+            AppLogger.d(
                 DUP_TAG,
-                if (inserted) "INSERTED id=${withFingerprint.id} uuid=${withFingerprint.transactionUuid} incomingRef=${withFingerprint.transactionId ?: "<none>"} fingerprint=$fingerprint"
-                else "INSERT_CONFLICT id=${withFingerprint.id} incomingRef=${withFingerprint.transactionId ?: "<none>"}"
+                if (inserted) "INSERTED id=${withFingerprint.id} uuid=${withFingerprint.transactionUuid}"
+                else "INSERT_CONFLICT id=${withFingerprint.id}"
             )
             // Fallback enqueue without transaction (for tests without DB)
             if (inserted && shouldQueue && syncQueueDao != null) {

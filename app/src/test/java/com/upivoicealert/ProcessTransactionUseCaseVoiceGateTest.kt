@@ -21,6 +21,7 @@ import com.upivoicealert.parser.generic.GenericReceivedParserV1
 import com.upivoicealert.parser.gpay.GPayParserV1
 import com.upivoicealert.parser.kotak.KotakParserV1
 import com.upivoicealert.utils.PackageNames
+import com.upivoicealert.observability.PaymentPipelineMetrics
 import com.upivoicealert.voice.AmountToWordsConverter
 import com.upivoicealert.voice.AnnouncementTemplates
 import com.upivoicealert.voice.VoiceAnnouncement
@@ -158,7 +159,8 @@ class ProcessTransactionUseCaseVoiceGateTest {
             serviceStateRepository = MutableServiceStateRepository(status),
             settingsRepository = FakeSettingsRepository(),
             announcementTemplates = AnnouncementTemplates(AmountToWordsConverter()),
-            voiceEngine = repo.voice
+            voiceEngine = repo.voice,
+            metrics = PaymentPipelineMetrics()
         )
     }
 }

@@ -78,7 +78,14 @@ class SyncQueueDaoTest {
             rows.forEachIndexed { idx, e -> if (e.status == SyncQueueEntity.STATUS_UPLOADING && e.updatedAt < cutoffTime) { rows[idx] = e.copy(status = SyncQueueEntity.STATUS_PENDING, updatedAt = updatedAt); count++ } }
             return count
         }
-    }
+        override suspend fun countTransactionQueueItems(): Int = rows.count { it.entityType == SyncQueueEntity.ENTITY_TYPE_TRANSACTION }
+        override suspend fun countAllQueueItems(): Int = rows.size
+        override suspend fun countOrphanedQueueItems(): Int = 0
+        override suspend fun countDuplicateExtraRows(): Int = 0
+        override suspend fun countDuplicateGroups(): Int = 0
+        override suspend fun countInvalidQueueItems(): Int = 0
+        override suspend fun countStaleUploading(cutoffTime: Long): Int = rows.count { it.status == SyncQueueEntity.STATUS_UPLOADING && it.updatedAt < cutoffTime }
+}
 
     @Test
     fun `insert queue item and read pending items`() = runTest {

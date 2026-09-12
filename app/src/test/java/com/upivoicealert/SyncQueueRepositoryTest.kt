@@ -77,7 +77,14 @@ class SyncQueueRepositoryTest {
             return count
         }
         val allRows: List<SyncQueueEntity> get() = rows.toList()
-    }
+        override suspend fun countTransactionQueueItems(): Int = rows.count { it.entityType == SyncQueueEntity.ENTITY_TYPE_TRANSACTION }
+        override suspend fun countAllQueueItems(): Int = rows.size
+        override suspend fun countOrphanedQueueItems(): Int = 0
+        override suspend fun countDuplicateExtraRows(): Int = 0
+        override suspend fun countDuplicateGroups(): Int = 0
+        override suspend fun countInvalidQueueItems(): Int = 0
+        override suspend fun countStaleUploading(cutoffTime: Long): Int = rows.count { it.status == SyncQueueEntity.STATUS_UPLOADING && it.updatedAt < cutoffTime }
+}
 
     @Test
     fun `add sync item persists with PENDING status`() = runTest {

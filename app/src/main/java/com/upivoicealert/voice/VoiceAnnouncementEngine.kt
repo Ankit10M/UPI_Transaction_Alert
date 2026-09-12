@@ -4,6 +4,7 @@ import android.content.Context
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import com.upivoicealert.domain.model.VoiceLanguage
+import com.upivoicealert.logging.AppLogger
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
@@ -36,8 +37,8 @@ class VoiceAnnouncementEngine @Inject constructor(
             val voices = engine?.voices ?: emptyList()
             val voiceTags = voices.map { it.locale.toLanguageTag() }.distinct()
             val defaultVoice = engine?.defaultVoice?.locale?.toLanguageTag() ?: "<none>"
-            Log.i(TAG, "TTS_INIT status=$status engine=${engine?.defaultEngine ?: "<unknown>"} defaultVoice=$defaultVoice")
-            Log.i(TAG, "TTS_AVAILABLE_LANGUAGES count=${voiceTags.size} tags=$voiceTags")
+            AppLogger.d(TAG, "TTS_INIT status=$status engine=${engine?.defaultEngine ?: "<unknown>"} defaultVoice=$defaultVoice")
+            AppLogger.d(TAG, "TTS_AVAILABLE_LANGUAGES count=${voiceTags.size} tags=$voiceTags")
         }
     }
 
@@ -61,11 +62,11 @@ class VoiceAnnouncementEngine @Inject constructor(
 
         engine.setSpeechRate(speechRate)
         val candidates = candidateLocales(language)
-        Log.i(TAG, "SELECTED_LANGUAGE=${language.name} targetTags=${candidates.map { it.toLanguageTag() }}")
+        AppLogger.d(TAG, "SELECTED_LANGUAGE=${language.name} targetTags=${candidates.map { it.toLanguageTag() }}")
 
         for (locale in candidates) {
             val availability = engine.isLanguageAvailable(locale)
-            Log.i(TAG, "LOCALE_CHECK locale=${locale.toLanguageTag()} availability=${availabilityLabel(availability)}")
+            AppLogger.d(TAG, "LOCALE_CHECK locale=${locale.toLanguageTag()} availability=${availabilityLabel(availability)}")
             if (availability == TextToSpeech.LANG_MISSING_DATA ||
                 availability == TextToSpeech.LANG_NOT_SUPPORTED
             ) {
@@ -74,7 +75,7 @@ class VoiceAnnouncementEngine @Inject constructor(
             // Call setLanguage() directly so the result code can be logged
             // (the Kotlin property setter `engine.language = locale` discards it).
             val setResult = engine.setLanguage(locale)
-            Log.i(TAG, "SET_LANGUAGE locale=${locale.toLanguageTag()} result=${availabilityLabel(setResult)}")
+            AppLogger.d(TAG, "SET_LANGUAGE locale=${locale.toLanguageTag()} result=${availabilityLabel(setResult)}")
             if (setResult == TextToSpeech.LANG_MISSING_DATA ||
                 setResult == TextToSpeech.LANG_NOT_SUPPORTED
             ) {
@@ -89,7 +90,7 @@ class VoiceAnnouncementEngine @Inject constructor(
         val fallbackLocale = Locale.forLanguageTag("en-IN")
         val fallbackResult = engine.setLanguage(fallbackLocale)
         Log.w(TAG, "LANGUAGE_UNAVAILABLE language=${language.name} candidates=${candidates.map { it.toLanguageTag() }} falling back to English")
-        Log.i(TAG, "SET_LANGUAGE_FALLBACK locale=${fallbackLocale.toLanguageTag()} result=${availabilityLabel(fallbackResult)}")
+        AppLogger.d(TAG, "SET_LANGUAGE_FALLBACK locale=${fallbackLocale.toLanguageTag()} result=${availabilityLabel(fallbackResult)}")
         activeLocale = fallbackLocale
         return true
     }
@@ -103,7 +104,9 @@ class VoiceAnnouncementEngine @Inject constructor(
         }
         val currentLanguage = activeLocale?.toLanguageTag() ?: "<unknown>"
         val result = engine.speak(text, TextToSpeech.QUEUE_ADD, null, "upi_voice_alert")
-        Log.i(TAG, "SPEAK_RESULT=${if (result == TextToSpeech.SUCCESS) "SUCCESS" else "ERROR($result)"} currentLocale=$currentLanguage text=$text")
+        // Privacy: announcement text contains amount+sender+app — never log content, even in debug.
+        // Log only operational result + locale and text length for diagnostics.
+        AppLogger.d(TAG, "SPEAK_RESULT=${if (result == TextToSpeech.SUCCESS) "SUCCESS" else "ERROR($result)"} currentLocale=$currentLanguage textLen=${text.length}")
     }
 
     @Synchronized

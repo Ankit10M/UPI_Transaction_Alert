@@ -66,7 +66,14 @@ class TransactionSyncWorkerStaleRecoveryTest {
         override suspend fun recoverStaleUploading(cutoffTime: Long, updatedAt: Long): Int {
             var c=0; rows.forEachIndexed{ idx,e-> if(e.status==SyncQueueEntity.STATUS_UPLOADING && e.updatedAt < cutoffTime){ rows[idx]=e.copy(status=SyncQueueEntity.STATUS_PENDING, updatedAt=updatedAt); c++ } }; return c
         }
-    }
+        override suspend fun countTransactionQueueItems(): Int = 0
+        override suspend fun countAllQueueItems(): Int = 0
+        override suspend fun countOrphanedQueueItems(): Int = 0
+        override suspend fun countDuplicateExtraRows(): Int = 0
+        override suspend fun countDuplicateGroups(): Int = 0
+        override suspend fun countInvalidQueueItems(): Int = 0
+        override suspend fun countStaleUploading(cutoffTime: Long): Int = 0
+}
 
     private class FakeTxDao(val map: MutableMap<String, TransactionEntity> = mutableMapOf()) : TransactionDao {
         override fun observeAll(): Flow<List<TransactionEntity>> = flowOf(map.values.toList())
@@ -88,6 +95,9 @@ class TransactionSyncWorkerStaleRecoveryTest {
         override suspend fun getEligibleMissingQueueUuids(limit: Int, offset: Int)=emptyList<String>()
         override suspend fun countEligibleMissingQueue()=0
         override suspend fun countEligibleTransactions()=0
+        override suspend fun countEligibleForAudit(): Int = 0
+        override suspend fun countMissingQueueForAudit(): Int = 0
+        override suspend fun countScannedTransactionsForAudit(): Int = 0
     }
 
     private fun createTx(uuid: String): TransactionEntity {

@@ -41,7 +41,10 @@ class TransactionSyncWorkerDiagnosticsTest {
         override suspend fun getEligibleMissingQueueUuids(limit: Int, offset: Int): List<String> = emptyList()
         override suspend fun countEligibleMissingQueue(): Int = 0
         override suspend fun countEligibleTransactions(): Int = 0
-    }
+        override suspend fun countEligibleForAudit(): Int = 0
+        override suspend fun countMissingQueueForAudit(): Int = 0
+        override suspend fun countScannedTransactionsForAudit(): Int = 0
+}
     private class FakeQueueDao : SyncQueueDao {
         override suspend fun insert(item: SyncQueueEntity): Long = 1
         override suspend fun insertIgnore(item: SyncQueueEntity): Long = -1
@@ -60,7 +63,19 @@ class TransactionSyncWorkerDiagnosticsTest {
         override suspend fun retryFailedItem(id: Long, updatedAt: Long) = 0
         override suspend fun retryAllFailed(updatedAt: Long) = 0
         override fun observeFailedItems() = flowOf(emptyList<SyncQueueEntity>())
-    }
+        override suspend fun countTransactionQueueItems(): Int = 0
+        override suspend fun countAllQueueItems(): Int = 0
+        override suspend fun countOrphanedQueueItems(): Int = 0
+        override suspend fun countDuplicateExtraRows(): Int = 0
+        override suspend fun countDuplicateGroups(): Int = 0
+        override suspend fun countInvalidQueueItems(): Int = 0
+        override suspend fun countStaleUploading(cutoffTime: Long): Int = 0
+        override suspend fun getStaleUploadingItems(cutoffTime: Long): List<com.upivoicealert.data.sync.SyncQueueEntity> = emptyList()
+        override suspend fun recoverStaleUploading(cutoffTime: Long, updatedAt: Long): Int = 0
+        override suspend fun updateStatusIfExpected(id: Long, expectedStatus: String, newStatus: String, updatedAt: Long): Int = 0
+        override suspend fun incrementRetryCountIfExpected(id: Long, expectedStatus: String, updatedAt: Long): Int = 0
+        override suspend fun markFailedWithDiagnosticsIfExpected(id: Long, status: String, errorCode: String?, errorMessage: String?, failedAt: Long?, updatedAt: Long, expectedStatus: String): Int = 0
+}
     private class FakeSyncRepo(private val result: TransactionSyncRepository.SyncResult, val syncedCount: Int = 0, val cause: TransactionSyncRepository.RetryCause = TransactionSyncRepository.RetryCause.SERVER) {
         var recordedSuccessAt: Long? = null
         var syncCalled = 0

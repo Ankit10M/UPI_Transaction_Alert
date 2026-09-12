@@ -62,7 +62,14 @@ class StaleUploadRecoveryManagerTest {
             }
             return count
         }
-    }
+        override suspend fun countTransactionQueueItems(): Int = rows.count { it.entityType == SyncQueueEntity.ENTITY_TYPE_TRANSACTION }
+        override suspend fun countAllQueueItems(): Int = rows.size
+        override suspend fun countOrphanedQueueItems(): Int = 0
+        override suspend fun countDuplicateExtraRows(): Int = 0
+        override suspend fun countDuplicateGroups(): Int = 0
+        override suspend fun countInvalidQueueItems(): Int = 0
+        override suspend fun countStaleUploading(cutoffTime: Long): Int = rows.count { it.status == SyncQueueEntity.STATUS_UPLOADING && it.updatedAt < cutoffTime }
+}
 
     private class FakeScheduler : SyncSchedulable {
         var scheduled = 0

@@ -45,7 +45,14 @@ class SyncRaceConditionHardeningTest {
         override fun observeFailedItems()=flowOf(emptyList<SyncQueueEntity>())
         override suspend fun getStaleUploadingItems(cutoffTime: Long)=emptyList<SyncQueueEntity>()
         override suspend fun recoverStaleUploading(cutoffTime: Long, updatedAt: Long)=0
-    }
+        override suspend fun countTransactionQueueItems(): Int = 0
+        override suspend fun countAllQueueItems(): Int = 0
+        override suspend fun countOrphanedQueueItems(): Int = 0
+        override suspend fun countDuplicateExtraRows(): Int = 0
+        override suspend fun countDuplicateGroups(): Int = 0
+        override suspend fun countInvalidQueueItems(): Int = 0
+        override suspend fun countStaleUploading(cutoffTime: Long): Int = 0
+}
 
     @Test fun `restrictive FAILED prevents overwriting PENDING after manual retry`() = runTest {
         val dao=RestrictiveFakeDao()

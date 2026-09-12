@@ -1,6 +1,6 @@
 package com.upivoicealert.filter
 
-import android.util.Log
+import com.upivoicealert.logging.AppLogger
 import javax.inject.Inject
 import javax.inject.Named
 
@@ -35,24 +35,24 @@ class NotificationFilter @Inject constructor(
         val lower = rawText.lowercase()
 
         if (packageName in blockedPackages) {
-            Log.i(TAG, "FILTER_CHECK package=$packageName reason=blocked package: $packageName")
+            AppLogger.d(TAG, "FILTER_CHECK package=$packageName reason=blocked package: $packageName")
             return false
         }
 
         for (promo in keywords) {
             if (lower.contains(promo)) {
-                Log.i(TAG, "FILTER_CHECK package=$packageName reason=promotional keyword: $promo")
+                AppLogger.d(TAG, "FILTER_CHECK package=$packageName reason=promotional keyword: $promo")
                 return false
             }
         }
 
         val signal = matchedFinancialSignal(lower)
         if (signal != null) {
-            Log.i(TAG, "FILTER_CHECK package=$packageName reason=financial keyword detected: $signal")
+            AppLogger.d(TAG, "FILTER_CHECK package=$packageName reason=financial keyword detected: $signal")
             return true
         }
 
-        Log.i(TAG, "FILTER_CHECK package=$packageName reason=no financial signal")
+        AppLogger.d(TAG, "FILTER_CHECK package=$packageName reason=no financial signal")
         return false
     }
 

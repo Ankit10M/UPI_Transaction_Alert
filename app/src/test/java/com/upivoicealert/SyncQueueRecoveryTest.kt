@@ -80,7 +80,16 @@ class SyncQueueRecoveryTest {
             return count
         }
         override fun observeFailedItems() = kotlinx.coroutines.flow.flowOf(rows.filter { it.status == SyncQueueEntity.STATUS_FAILED })
-    }
+        override suspend fun getStaleUploadingItems(cutoffTime: Long) = rows.filter { it.status == SyncQueueEntity.STATUS_UPLOADING && it.updatedAt < cutoffTime }
+        override suspend fun recoverStaleUploading(cutoffTime: Long, updatedAt: Long): Int { var c = 0; rows.forEachIndexed { idx, e -> if (e.status == SyncQueueEntity.STATUS_UPLOADING && e.updatedAt < cutoffTime) { rows[idx] = e.copy(status = SyncQueueEntity.STATUS_PENDING, updatedAt = updatedAt); c++ } }; return c }
+        override suspend fun countTransactionQueueItems(): Int = rows.count { it.entityType == SyncQueueEntity.ENTITY_TYPE_TRANSACTION }
+        override suspend fun countAllQueueItems(): Int = rows.size
+        override suspend fun countOrphanedQueueItems(): Int = 0
+        override suspend fun countDuplicateExtraRows(): Int = 0
+        override suspend fun countDuplicateGroups(): Int = 0
+        override suspend fun countInvalidQueueItems(): Int = 0
+        override suspend fun countStaleUploading(cutoffTime: Long): Int = rows.count { it.status == SyncQueueEntity.STATUS_UPLOADING && it.updatedAt < cutoffTime }
+}
 
     private var entityCounter = 1000L
     private fun createFailedEntity(suffix: Long = entityCounter++, failedAt: Long = System.currentTimeMillis(), retryCount: Int = 1, errorCode: String = "VALIDATION_ERROR", errorMessage: String = "Transaction data could not be synced."): SyncQueueEntity {

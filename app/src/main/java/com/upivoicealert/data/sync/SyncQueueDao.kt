@@ -28,13 +28,13 @@ interface SyncQueueDao {
     suspend fun updateStatus(id: Long, status: String, updatedAt: Long)
 
     @Query("UPDATE sync_queue SET status = :newStatus, updatedAt = :updatedAt WHERE id = :id AND status = :expectedStatus")
-    suspend fun updateStatusIfExpected(id: Long, expectedStatus: String, newStatus: String, updatedAt: Long): Int = 1
+    suspend fun updateStatusIfExpected(id: Long, expectedStatus: String, newStatus: String, updatedAt: Long): Int
 
     @Query("UPDATE sync_queue SET retryCount = retryCount + 1, updatedAt = :updatedAt WHERE id = :id")
     suspend fun incrementRetryCount(id: Long, updatedAt: Long)
 
     @Query("UPDATE sync_queue SET retryCount = retryCount + 1, updatedAt = :updatedAt WHERE id = :id AND status = :expectedStatus")
-    suspend fun incrementRetryCountIfExpected(id: Long, expectedStatus: String, updatedAt: Long): Int = 1
+    suspend fun incrementRetryCountIfExpected(id: Long, expectedStatus: String, updatedAt: Long): Int
 
     @Query("SELECT * FROM sync_queue ORDER BY createdAt ASC")
     suspend fun getAll(): List<SyncQueueEntity>
@@ -91,7 +91,7 @@ interface SyncQueueDao {
         failedAt: Long?,
         updatedAt: Long,
         expectedStatus: String
-    ): Int = 1
+    ): Int
 
     /**
      * Controlled retry: FAILED -> PENDING. Concurrency-safe: only succeeds if current
@@ -122,21 +122,21 @@ interface SyncQueueDao {
     // ─── Phase 7.4: stale UPLOADING recovery ───────────────────────────────
 
     @Query("SELECT * FROM sync_queue WHERE status = 'UPLOADING' AND updatedAt < :cutoffTime ORDER BY updatedAt ASC")
-    suspend fun getStaleUploadingItems(cutoffTime: Long): List<SyncQueueEntity> = emptyList()
+    suspend fun getStaleUploadingItems(cutoffTime: Long): List<SyncQueueEntity>
 
     @Query(
         "UPDATE sync_queue SET status = 'PENDING', updatedAt = :updatedAt " +
             "WHERE status = 'UPLOADING' AND updatedAt < :cutoffTime"
     )
-    suspend fun recoverStaleUploading(cutoffTime: Long, updatedAt: Long): Int = 0
+    suspend fun recoverStaleUploading(cutoffTime: Long, updatedAt: Long): Int
 
     // ─── Phase 7.5: integrity audit — efficient COUNT/EXISTS queries ────────
 
     @Query("SELECT COUNT(*) FROM sync_queue WHERE entityType = 'TRANSACTION'")
-    suspend fun countTransactionQueueItems(): Int = 0
+    suspend fun countTransactionQueueItems(): Int
 
     @Query("SELECT COUNT(*) FROM sync_queue")
-    suspend fun countAllQueueItems(): Int = 0
+    suspend fun countAllQueueItems(): Int
 
     @Query(
         """
@@ -148,7 +148,7 @@ interface SyncQueueDao {
         )
         """
     )
-    suspend fun countOrphanedQueueItems(): Int = 0
+    suspend fun countOrphanedQueueItems(): Int
 
     /**
      * Defensive duplicate check: extra duplicate rows beyond the first per logical key.
@@ -163,7 +163,7 @@ interface SyncQueueDao {
             - (SELECT COUNT(DISTINCT entityId) FROM sync_queue WHERE entityType = 'TRANSACTION')
         """
     )
-    suspend fun countDuplicateExtraRows(): Int = 0
+    suspend fun countDuplicateExtraRows(): Int
 
     @Query(
         """
@@ -173,7 +173,7 @@ interface SyncQueueDao {
         )
         """
     )
-    suspend fun countDuplicateGroups(): Int = 0
+    suspend fun countDuplicateGroups(): Int
 
     @Query(
         """
@@ -183,8 +183,8 @@ interface SyncQueueDao {
            OR status NOT IN ('PENDING','UPLOADING','SYNCED','FAILED')
         """
     )
-    suspend fun countInvalidQueueItems(): Int = 0
+    suspend fun countInvalidQueueItems(): Int
 
     @Query("SELECT COUNT(*) FROM sync_queue WHERE status = 'UPLOADING' AND updatedAt < :cutoffTime")
-    suspend fun countStaleUploading(cutoffTime: Long): Int = 0
+    suspend fun countStaleUploading(cutoffTime: Long): Int
 }

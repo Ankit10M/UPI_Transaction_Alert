@@ -18,6 +18,7 @@ import com.upivoicealert.parser.ParserVersionResolver
 import com.upivoicealert.parser.TransactionValidator
 import com.upivoicealert.parser.ValidationResult
 import com.upivoicealert.parser.toTransaction
+import com.upivoicealert.observability.PaymentPipelineMetrics
 import com.upivoicealert.utils.PackageNames
 import com.upivoicealert.voice.AnnouncementTemplates
 import com.upivoicealert.voice.VoiceAnnouncement
@@ -49,7 +50,8 @@ class ProcessTransactionUseCase @Inject constructor(
     private val serviceStateRepository: ServiceStateRepository,
     private val settingsRepository: SettingsRepository,
     private val announcementTemplates: AnnouncementTemplates,
-    private val voiceEngine: VoiceAnnouncement
+    private val voiceEngine: VoiceAnnouncement,
+    private val metrics: PaymentPipelineMetrics
 ) {
 
     suspend fun processNotification(
@@ -58,14 +60,19 @@ class ProcessTransactionUseCase @Inject constructor(
         postTime: Long,
         notificationKey: String? = null
     ): ProcessingResult {
-        AppLogger.d(TAG, "PROCESS_START package=$packageName postTime=$postTime rawText=$rawText")
+        // Best-effort observational metric: increment received counter immediately;
+        // never blocks or throws — payment pipeline is metrics-independent.
+        runCatching { metrics.onNotificationReceived() }
+        // Privacy: raw notification content is never logged, even in debug (P1-2).
+        // Log only lengths/package for diagnostics; raw payload stays in Room only.
+        AppLogger.d(TAG, "PROCESS_START package=$packageName postTime=$postTime rawLen=${rawText.length}")
 
         // The transaction pipeline ALWAYS executes. The Home screen START/STOP
         // control no longer gates processing — it only gates the TTS announcement
         // (see process()). Payments are detected, saved and counted in history and
         // the business summary in both states; only the spoken alert is affected.
         val text = textCleaner.clean(rawText)
-        AppLogger.d(TAG, "CLEANED_TEXT package=$packageName text=$text")
+        AppLogger.d(TAG, "CLEANED_TEXT package=$packageName cleanedLen=${text.length}")
         if (text.isBlank()) {
             AppLogger.d(TAG, "FILTER_FAIL package=$packageName reason=empty after cleaning")
             return ProcessingResult.NOT_A_PAYMENT
@@ -87,6 +94,7 @@ class ProcessTransactionUseCase @Inject constructor(
         val parser = resolver.resolve(packageName, text)
         if (parser == null) {
             AppLogger.d(TAG, "PARSER_NOT_FOUND package=$packageName")
+            runCatching { metrics.onParseRejected() }
             transactionRepository.addUnparsedNotification(
                 UnparsedNotification(
                     id = UUID.randomUUID().toString(),
@@ -104,6 +112,7 @@ class ProcessTransactionUseCase @Inject constructor(
             parser.parse(text, postTime)
         } catch (e: Exception) {
             AppLogger.w(TAG, "Parser ${parser.version} failed", e)
+            runCatching { metrics.onParseRejected() }
             transactionRepository.addUnparsedNotification(
                 UnparsedNotification(
                     id = UUID.randomUUID().toString(),
@@ -117,11 +126,10 @@ class ProcessTransactionUseCase @Inject constructor(
         }
 
         val parsedWithAppLabel = parsed.copy(upiApp = PackageNames.labelFor(packageName))
-        AppLogger.d(TAG, "parsed amount=${parsedWithAppLabel.amount}")
-        AppLogger.d(TAG, "parsed sender=${parsedWithAppLabel.sender}")
-        AppLogger.d(TAG, "parsed app=${parsedWithAppLabel.upiApp}")
+        AppLogger.d(TAG, "PARSER_RESULT package=$packageName parser=${parser.version} status=parsed")
         return when (val validation = validator.validate(parsedWithAppLabel)) {
             is ValidationResult.Invalid -> {
+                runCatching { metrics.onValidationRejected() }
                 transactionRepository.addUnparsedNotification(
                     UnparsedNotification(
                         id = UUID.randomUUID().toString(),
@@ -166,11 +174,14 @@ class ProcessTransactionUseCase @Inject constructor(
 
         val inserted = transactionRepository.insertTransactionIfNotDuplicate(transactionWithVoice)
         if (!inserted) {
-            AppLogger.d(DUP_TAG, "SKIP_TRANSACTION id=${transaction.id} amount=${transaction.amount} sender=${transaction.sender} app=${transaction.upiApp} incomingRef=${transaction.transactionId ?: "<none>"} reason=duplicate")
+            AppLogger.d(DUP_TAG, "SKIP_TRANSACTION id=${transaction.id} reason=duplicate")
+            runCatching { metrics.onDuplicate() }
             return ProcessingResult.DUPLICATE
         }
+        runCatching { metrics.onPersisted() }
 
         if (transactionWithVoice.voiceAnnounced) {
+            runCatching { metrics.onTtsAttempted() }
             try {
                 val language = settingsRepository.getLanguage()
                 val rate = settingsRepository.getSpeechRate()
@@ -184,6 +195,7 @@ class ProcessTransactionUseCase @Inject constructor(
                 val effectiveLanguage = if (fellBackToEnglish) VoiceLanguage.ENGLISH else language
                 voiceEngine.speak(announcementTemplates.build(transactionWithVoice, effectiveLanguage))
             } catch (e: Exception) {
+                runCatching { metrics.onTtsFailed() }
                 AppLogger.w(TAG, "Voice announcement failed (transaction already saved)", e)
             }
         } else {

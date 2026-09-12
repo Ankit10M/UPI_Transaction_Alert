@@ -58,6 +58,9 @@ class NetworkProductionHardeningTest {
         override suspend fun getEligibleMissingQueueUuids(limit: Int, offset: Int): List<String> = emptyList()
         override suspend fun countEligibleMissingQueue(): Int = 0
         override suspend fun countEligibleTransactions(): Int = 0
+        override suspend fun countEligibleForAudit(): Int = 0
+        override suspend fun countMissingQueueForAudit(): Int = 0
+        override suspend fun countScannedTransactionsForAudit(): Int = 0
     }
 
     private class FakeQueue : SyncQueueDao {
@@ -85,7 +88,14 @@ class NetworkProductionHardeningTest {
         override fun observeFailedItems(): Flow<List<SyncQueueEntity>> = flowOf(rows.filter { it.status == SyncQueueEntity.STATUS_FAILED })
         override suspend fun getStaleUploadingItems(cutoffTime: Long) = rows.filter { it.status == SyncQueueEntity.STATUS_UPLOADING && it.updatedAt < cutoffTime }
         override suspend fun recoverStaleUploading(cutoffTime: Long, updatedAt: Long): Int { var c = 0; rows.forEachIndexed { idx, e -> if (e.status == SyncQueueEntity.STATUS_UPLOADING && e.updatedAt < cutoffTime) { rows[idx] = e.copy(status = SyncQueueEntity.STATUS_PENDING, updatedAt = updatedAt); c++ } }; return c }
-    }
+        override suspend fun countTransactionQueueItems(): Int = rows.count { it.entityType == SyncQueueEntity.ENTITY_TYPE_TRANSACTION }
+        override suspend fun countAllQueueItems(): Int = rows.size
+        override suspend fun countOrphanedQueueItems(): Int = 0
+        override suspend fun countDuplicateExtraRows(): Int = 0
+        override suspend fun countDuplicateGroups(): Int = 0
+        override suspend fun countInvalidQueueItems(): Int = 0
+        override suspend fun countStaleUploading(cutoffTime: Long): Int = rows.count { it.status == SyncQueueEntity.STATUS_UPLOADING && it.updatedAt < cutoffTime }
+}
 
     private fun repo(queue: FakeQueue, txMap: MutableMap<String, TransactionEntity>, api: TransactionSyncApi) =
         TransactionSyncRepository(queue, FakeTransactionDao(txMap), api, object : DeviceIdProvider { override suspend fun getDeviceId() = "dev1" })

@@ -31,6 +31,7 @@ import com.upivoicealert.parser.gpay.GPayParserV1
 import com.upivoicealert.parser.kotak.KotakParserV1
 import com.upivoicealert.utils.Constants
 import com.upivoicealert.utils.PackageNames
+import com.upivoicealert.observability.PaymentPipelineMetrics
 import com.upivoicealert.voice.AmountToWordsConverter
 import com.upivoicealert.voice.AnnouncementTemplates
 import com.upivoicealert.voice.VoiceAnnouncement
@@ -113,7 +114,14 @@ class OemBatteryHardeningTest {
         override fun observeFailedItems() = flowOf(emptyList<SyncQueueEntity>())
         override suspend fun getStaleUploadingItems(cutoffTime: Long) = rows.filter { it.status == SyncQueueEntity.STATUS_UPLOADING && it.updatedAt < cutoffTime }
         override suspend fun recoverStaleUploading(cutoffTime: Long, updatedAt: Long): Int { var c = 0; rows.forEachIndexed { idx, e -> if (e.status == SyncQueueEntity.STATUS_UPLOADING && e.updatedAt < cutoffTime) { rows[idx] = e.copy(status = SyncQueueEntity.STATUS_PENDING, updatedAt = updatedAt); c++ } }; return c }
-    }
+        override suspend fun countTransactionQueueItems(): Int = rows.count { it.entityType == SyncQueueEntity.ENTITY_TYPE_TRANSACTION }
+        override suspend fun countAllQueueItems(): Int = rows.size
+        override suspend fun countOrphanedQueueItems(): Int = 0
+        override suspend fun countDuplicateExtraRows(): Int = 0
+        override suspend fun countDuplicateGroups(): Int = 0
+        override suspend fun countInvalidQueueItems(): Int = 0
+        override suspend fun countStaleUploading(cutoffTime: Long): Int = rows.count { it.status == SyncQueueEntity.STATUS_UPLOADING && it.updatedAt < cutoffTime }
+}
 
     private class NoopUnparsed : UnparsedNotificationDao {
         override suspend fun insert(entity: UnparsedNotificationEntity): Long = 1
@@ -172,7 +180,7 @@ class OemBatteryHardeningTest {
             override fun prepare(language: VoiceLanguage, speechRate: Float): Boolean = false
             override fun speak(text: String) { throw RuntimeException("TTS engine unavailable") }
         } else voice
-        return ProcessTransactionUseCase(cleaner, filter, TransactionClassifier(), resolver, TransactionValidator(), repo, svcState, settings, AnnouncementTemplates(AmountToWordsConverter()), voiceEngine)
+        return ProcessTransactionUseCase(cleaner, filter, TransactionClassifier(), resolver, TransactionValidator(), repo, svcState, settings, AnnouncementTemplates(AmountToWordsConverter()), voiceEngine, PaymentPipelineMetrics())
     }
 
     private class RecordingRepo(val txDao: FakeTxDao, val syncDao: FakeSyncDao) : TransactionRepository {

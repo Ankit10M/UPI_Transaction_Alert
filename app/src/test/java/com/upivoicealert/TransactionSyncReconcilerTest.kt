@@ -61,6 +61,9 @@ class TransactionSyncReconcilerTest {
         }
         override suspend fun countEligibleMissingQueue(): Int = 0
         override suspend fun countEligibleTransactions(): Int = transactions.count { it.status == "SUCCESS" && it.transactionType == "RECEIVED" }
+        override suspend fun countEligibleForAudit(): Int = transactions.count { it.status == "SUCCESS" && it.transactionType == "RECEIVED" && it.transactionUuid.trim().isNotEmpty() }
+        override suspend fun countMissingQueueForAudit(): Int = 0
+        override suspend fun countScannedTransactionsForAudit(): Int = transactions.count { it.transactionUuid.trim().isNotEmpty() }
     }
 
     // Enhanced fake that knows about syncQueue
@@ -102,7 +105,16 @@ class TransactionSyncReconcilerTest {
         override suspend fun retryFailedItem(id: Long, updatedAt: Long) = 0
         override suspend fun retryAllFailed(updatedAt: Long) = 0
         override fun observeFailedItems() = flowOf(emptyList<SyncQueueEntity>())
-    }
+        override suspend fun countTransactionQueueItems(): Int = 0
+        override suspend fun countAllQueueItems(): Int = 0
+        override suspend fun countOrphanedQueueItems(): Int = 0
+        override suspend fun countDuplicateExtraRows(): Int = 0
+        override suspend fun countDuplicateGroups(): Int = 0
+        override suspend fun countInvalidQueueItems(): Int = 0
+        override suspend fun countStaleUploading(cutoffTime: Long): Int = 0
+        override suspend fun getStaleUploadingItems(cutoffTime: Long): List<com.upivoicealert.data.sync.SyncQueueEntity> = emptyList()
+        override suspend fun recoverStaleUploading(cutoffTime: Long, updatedAt: Long): Int = 0
+}
 
     private class FakeReconciliationStore : ReconciliationStatusRecorder {
         var lastChecked: Long? = null
@@ -146,7 +158,10 @@ class TransactionSyncReconcilerTest {
                 return txs.count { it.status == "SUCCESS" && it.transactionType == "RECEIVED" && it.transactionUuid !in queuedIds }
             }
             override suspend fun countEligibleTransactions(): Int = txs.count { it.status == "SUCCESS" && it.transactionType == "RECEIVED" }
-        }
+        override suspend fun countEligibleForAudit(): Int = 0
+        override suspend fun countMissingQueueForAudit(): Int = 0
+        override suspend fun countScannedTransactionsForAudit(): Int = 0
+}
         return TransactionSyncReconciler(txDao, queue, storeFake)
     }
 
